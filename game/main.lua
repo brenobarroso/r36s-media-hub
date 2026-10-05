@@ -61,6 +61,10 @@ local function save_state()
   st.brightness = app.state.brightness or "80"
   st.screen_dimmer = app.state.screen_dimmer or "0"
   st.eq = app.state.eq or (player.eq and player.eq.presets[player.eq.current].id) or "flat"
+  st.music_dir = app.state.music_dir
+  st.photo_dir = app.state.photo_dir
+  st.video_dir = app.state.video_dir
+  st.book_dir = app.state.book_dir
   state.save(st)
 end
 
@@ -89,6 +93,17 @@ local function on_action(a)
     return
   end
 
+  -- Forward action to active screen first
+  local handled = false
+  if app.current and app.current.action then
+    handled = app.current.action(a)
+  end
+
+  if handled then
+    return
+  end
+
+  -- Global fallbacks for media playback controls
   if a == "start" then
     player.toggle()
     ui.toast(player.status == "playing" and "Tocando" or (player.status == "paused" and "Pausado" or "Nada tocando"))
@@ -102,8 +117,6 @@ local function on_action(a)
   elseif a == "r2" then
     player.change_volume(0.05)
     volume_toast()
-  else
-    app.current.action(a)
   end
 end
 
@@ -138,6 +151,7 @@ function love.load()
   app.screens.videos = require("src.screens.videos")
   app.screens.books = require("src.screens.books")
   app.screens.book_reader = require("src.screens.book_reader")
+  app.screens.folder_picker = require("src.screens.folder_picker")
 
   app.show("home")
 

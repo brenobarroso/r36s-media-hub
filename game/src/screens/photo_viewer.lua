@@ -158,6 +158,7 @@ function V.action(a)
       ui.toast("Zoom 2x", 0.8)
     end
   end
+  return true
 end
 
 function V.update(dt)

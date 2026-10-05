@@ -73,7 +73,7 @@ local function load_thumbnail(path)
 end
 
 function P.enter(dir_path)
-  P.dir = dir_path or P.dir or find_photo_root()
+  P.dir = dir_path or find_photo_root()
   P.entries = {}
   P.photos_only = {}
   P.sel = 1
@@ -109,6 +109,10 @@ function P.action(a)
     if P.sel > 1 then P.sel = P.sel - 1 end
   elseif a == "right" then
     if P.sel < total then P.sel = P.sel + 1 end
+  elseif a == "l1" then
+    P.sel = math.max(1, P.sel - PAGE)
+  elseif a == "r1" then
+    P.sel = math.min(total, P.sel + PAGE)
   elseif a == "back" then
     local root = find_photo_root()
     if P.dir ~= root and P.dir ~= "/" then
@@ -147,6 +151,7 @@ function P.action(a)
     P.scroll = math.floor((P.sel - 1) / COLS) * COLS - (ROWS - 1) * COLS
   end
   P.scroll = math.max(0, P.scroll)
+  return true
 end
 
 function P.update(dt)
@@ -171,7 +176,7 @@ function P.draw()
   if #P.entries == 0 then
     ui.set(ui.c.dim)
     love.graphics.setFont(ui.f.body)
-    love.graphics.printf("Nenhuma foto ou pasta encontrada.\nColoque imagens em /roms2/photos", 0, 200, ui.W, "center")
+    love.graphics.printf("Nenhuma foto ou pasta encontrada.\nPasta: " .. (P.dir or "não definida"), 0, 200, ui.W, "center")
   end
 
   -- 4x3 Thumbnail Grid

@@ -56,8 +56,8 @@ function N.draw()
       love.graphics.printf(player.error, 0, 260, ui.W, "center")
     end
   else
-    -- cover
-    ui.draw_cover(cur.cover, 32, 66, 244)
+    -- cover (or WMP animated equalizer visualizer if missing)
+    ui.draw_cover(cur.cover, 32, 66, 244, player.status == "playing")
 
     -- info column
     local x, w = 300, ui.W - 300 - 24

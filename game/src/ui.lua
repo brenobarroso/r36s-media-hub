@@ -267,19 +267,101 @@ function M.draw_toast()
   love.graphics.print(toast_text, x + 16, y + 38 / 2 - f:getHeight() / 2)
 end
 
--- Draws a cover (or a placeholder) fitted inside a square box.
-function M.draw_cover(cover, x, y, size)
+-- Draws an animated retro equalizer visualizer (Windows Media Player style)
+local peak_heights = {}
+local peak_times = {}
+
+function M.draw_visualizer(x, y, size, is_playing)
+  -- Dark glossy box
   M.set(M.c.panel2)
   love.graphics.rectangle("fill", x, y, size, size, 8, 8)
+  M.set(M.c.panel)
+  love.graphics.rectangle("fill", x + 4, y + 4, size - 8, size - 8, 6, 6)
+
+  -- Subtle header label
+  M.set(M.c.dim)
+  love.graphics.setFont(M.f.tiny)
+  love.graphics.printf("VISUALIZER", x, y + 8, size, "center")
+
+  local num_bars = 16
+  local pad_x = 16
+  local bottom_pad = 16
+  local top_pad = 28
+  local usable_w = size - pad_x * 2
+  local usable_h = size - top_pad - bottom_pad
+  local bar_w = math.floor(usable_w / num_bars) - 2
+  local t = love.timer.getTime()
+
+  local num_segments = 16
+  local seg_h = math.floor(usable_h / num_segments) - 2
+
+  for i = 1, num_bars do
+    local bx = x + pad_x + (i - 1) * (bar_w + 2)
+
+    -- Dynamic frequency amplitude
+    local amp = 0.05
+    if is_playing then
+      local wave1 = math.sin(t * 5.0 + i * 0.70)
+      local wave2 = math.cos(t * 7.5 - i * 1.15)
+      local wave3 = math.sin(t * 3.2 + i * 1.85)
+      amp = 0.38 + 0.30 * wave1 + 0.18 * wave2 + 0.12 * wave3
+      if i <= 5 then amp = amp * 1.15 end
+      amp = math.max(0.08, math.min(0.98, amp))
+    end
+
+    -- Update peak
+    peak_heights[i] = peak_heights[i] or 0
+    peak_times[i] = peak_times[i] or 0
+    if amp >= peak_heights[i] then
+      peak_heights[i] = amp
+      peak_times[i] = t
+    else
+      local dt_peak = t - peak_times[i]
+      if dt_peak > 0.12 then
+        peak_heights[i] = math.max(0.05, peak_heights[i] - 0.40 * (dt_peak - 0.12))
+      end
+    end
+
+    local active_segs = math.floor(amp * num_segments)
+    for s = 1, num_segments do
+      local sy = y + top_pad + usable_h - s * (seg_h + 2)
+      if s <= active_segs then
+        -- Segment color: green -> yellow -> orange -> red
+        if s <= 8 then
+          love.graphics.setColor(0.15, 0.85, 0.35, 1)
+        elseif s <= 12 then
+          love.graphics.setColor(0.95, 0.82, 0.15, 1)
+        elseif s <= 14 then
+          love.graphics.setColor(0.98, 0.52, 0.12, 1)
+        else
+          love.graphics.setColor(0.95, 0.22, 0.25, 1)
+        end
+        love.graphics.rectangle("fill", bx, sy, bar_w, seg_h, 1, 1)
+      else
+        love.graphics.setColor(0.18, 0.20, 0.24, 0.35)
+        love.graphics.rectangle("fill", bx, sy, bar_w, seg_h, 1, 1)
+      end
+    end
+
+    -- Floating peak marker
+    local peak_seg = math.max(1, math.min(num_segments, math.floor(peak_heights[i] * num_segments)))
+    local peak_y = y + top_pad + usable_h - peak_seg * (seg_h + 2)
+    love.graphics.setColor(1, 1, 1, 0.95)
+    love.graphics.rectangle("fill", bx, peak_y, bar_w, 2)
+  end
+end
+
+-- Draws a cover (or retro visualizer when missing) fitted inside a square box.
+function M.draw_cover(cover, x, y, size, is_playing)
   if cover then
+    M.set(M.c.panel2)
+    love.graphics.rectangle("fill", x, y, size, size, 8, 8)
     local w, h = cover:getDimensions()
     local s = math.min(size / w, size / h)
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.draw(cover, x + (size - w * s) / 2, y + (size - h * s) / 2, 0, s, s)
   else
-    M.set(M.c.faint)
-    local n = size * 0.45
-    M.icon_note(x + (size - n) / 2, y + (size - n) / 2, n)
+    M.draw_visualizer(x, y, size, is_playing)
   end
 end
 

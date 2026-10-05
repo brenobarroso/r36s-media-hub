@@ -199,6 +199,7 @@ function R.action(a)
     end
     ui.toast("Visual: " .. names[R.color_style], 1.0)
   end
+  return true
 end
 
 function R.update(dt)

@@ -12,6 +12,8 @@ local V = {
   sel = 1,
   scroll = 0,
   thumb_cache = {},
+  playlist_items = {},
+  playlist_set = {},
 }
 
 local VIDEO_EXT = {
@@ -86,6 +88,8 @@ local function load_video_thumb(video_path, dir_path)
           love.graphics.draw(raw, 0, 0, 0, s, s)
           love.graphics.setCanvas(prev)
           raw:release()
+          imd:release()
+          fd:release()
           return canvas
         end)
         if ok and img then
@@ -101,7 +105,7 @@ local function load_video_thumb(video_path, dir_path)
 end
 
 function V.enter(dir_path)
-  V.dir = dir_path or V.dir or find_video_root()
+  V.dir = dir_path or find_video_root()
   V.entries = {}
   V.sel = 1
   V.scroll = 0
@@ -123,22 +127,59 @@ function V.enter(dir_path)
   end
 end
 
-local function play_video(path)
+local function play_videos(paths)
+  if type(paths) == "string" then
+    paths = { paths }
+  end
+  if not paths or #paths == 0 then return end
+
   -- Pause background music if playing
   if player.status == "playing" then
     player.toggle()
   end
 
-  ui.toast("Iniciando vídeo...", 2.0)
+  local count = #paths
+  if count == 1 then
+    ui.toast("Iniciando vídeo...", 2.0)
+  else
+    ui.toast(string.format("Iniciando playlist (%d vídeos)...", count), 2.0)
+  end
 
   if U.is_windows() then
-    -- On Windows, open default media player or mpv/vlc if available
-    os.execute(string.format('start "" %q', path))
+    -- On Windows, open default media player
+    for _, p in ipairs(paths) do
+      os.execute(string.format('start "" %q', p))
+    end
   else
-    -- On Linux / ArkOS / PortMaster: launch mpv (hardware-accelerated KMS/DRM) or ffplay
-    local q = string.format("%q", path)
-    local cmd = string.format('(mpv --fs --vo=drm %s || mpv --fs %s || ffplay -fs -autoexit %s) >/dev/null 2>&1', q, q, q)
+    -- On Linux / ArkOS / PortMaster: launch mpv with all files sequentially
+    local escaped = {}
+    for _, p in ipairs(paths) do
+      escaped[#escaped + 1] = string.format("%q", p)
+    end
+    local files_str = table.concat(escaped, " ")
+    local cmd = string.format('(mpv --fs --vo=drm %s || mpv --fs %s || ffplay -fs -autoexit %s) >/dev/null 2>&1', files_str, files_str, escaped[1])
     os.execute(cmd)
+  end
+end
+
+local function toggle_playlist_item(e)
+  if not e or e.is_dir then
+    ui.toast("Apenas arquivos de vídeo podem ser adicionados à fila", 1.5)
+    return
+  end
+  if V.playlist_set[e.path] then
+    V.playlist_set[e.path] = nil
+    for i, item in ipairs(V.playlist_items) do
+      if item.path == e.path then
+        table.remove(V.playlist_items, i)
+        break
+      end
+    end
+    ui.toast(string.format("Removido da playlist (%d)", #V.playlist_items), 1.3)
+  else
+    V.playlist_set[e.path] = true
+    table.insert(V.playlist_items, { path = e.path, name = e.name, file = e.file })
+    ui.toast(string.format("Adicionado à playlist (%d)", #V.playlist_items), 1.3)
   end
 end
 
@@ -168,8 +209,39 @@ function V.action(a)
       if e.is_dir then
         V.enter(e.path)
       else
-        play_video(e.path)
+        play_videos({ e.path })
       end
+    end
+  elseif a == "x" then
+    local e = V.entries[V.sel]
+    if e then
+      toggle_playlist_item(e)
+    end
+  elseif a == "start" then
+    if #V.playlist_items > 0 then
+      local paths = {}
+      for _, item in ipairs(V.playlist_items) do
+        paths[#paths + 1] = item.path
+      end
+      play_videos(paths)
+    else
+      local paths = {}
+      for _, item in ipairs(V.entries) do
+        if not item.is_dir then
+          paths[#paths + 1] = item.path
+        end
+      end
+      if #paths > 0 then
+        play_videos(paths)
+      else
+        ui.toast("Nenhum vídeo nesta pasta", 1.5)
+      end
+    end
+  elseif a == "select" or a == "y" then
+    if #V.playlist_items > 0 then
+      V.playlist_items = {}
+      V.playlist_set = {}
+      ui.toast("Playlist limpa!", 1.5)
     end
   end
 
@@ -181,6 +253,7 @@ function V.action(a)
     V.scroll = V.sel - VISIBLE_ROWS
   end
   V.scroll = math.max(0, V.scroll)
+  return true
 end
 
 function V.update(dt)
@@ -202,10 +275,21 @@ function V.draw()
   local count_text = (#V.entries > 0) and (V.sel .. " / " .. #V.entries) or "Vazio"
   love.graphics.printf(count_text, ui.W - 140, 22 - ui.f.small:getHeight() / 2, 120, "right")
 
+  if #V.playlist_items > 0 then
+    local ptxt = string.format("Fila: %d", #V.playlist_items)
+    local pw = ui.f.tiny:getWidth(ptxt) + 16
+    local px = ui.W - 148 - pw
+    ui.set(ui.c.accent)
+    love.graphics.rectangle("fill", px, 11, pw, 22, 4, 4)
+    ui.set(ui.c.bg)
+    love.graphics.setFont(ui.f.tiny)
+    love.graphics.printf(ptxt, px, 11 + 11 - ui.f.tiny:getHeight() / 2, pw, "center")
+  end
+
   if #V.entries == 0 then
     ui.set(ui.c.dim)
     love.graphics.setFont(ui.f.body)
-    love.graphics.printf("Nenhum vídeo ou pasta encontrado.\nColoque filmes e clipes em /roms2/videos", 0, 200, ui.W, "center")
+    love.graphics.printf("Nenhum vídeo ou pasta encontrado.\nPasta: " .. (V.dir or "não definida"), 0, 200, ui.W, "center")
   end
 
   -- Video List
@@ -257,6 +341,22 @@ function V.draw()
         ui.set(is_sel and ui.c.accent or ui.c.dim)
         ui.icon_video(bx + (bw - 28) / 2, by + (bh - 28) / 2, 28)
       end
+
+      -- Playlist queue position indicator over thumbnail
+      if V.playlist_set[e.path] then
+        local pl_pos = nil
+        for pi, item in ipairs(V.playlist_items) do
+          if item.path == e.path then pl_pos = pi break end
+        end
+        if pl_pos then
+          local pw = 34
+          ui.set(ui.c.accent)
+          love.graphics.rectangle("fill", bx + bw - pw, by, pw, 16, 0, 4)
+          ui.set(ui.c.bg)
+          love.graphics.setFont(ui.f.tiny)
+          love.graphics.printf("#" .. pl_pos, bx + bw - pw, by + 8 - ui.f.tiny:getHeight() / 2, pw, "center")
+        end
+      end
     end
 
     -- Video Title & Subtitle
@@ -307,11 +407,19 @@ function V.draw()
 
   local acc = input.swap_ab and "B" or "A"
   local bck = input.swap_ab and "A" or "B"
-  ui.hints({
+  local hints = {
     { acc, "Reproduzir" },
-    { bck, "Voltar" },
-    { "L1/R1", "Pular 6" },
-  }, 448)
+    { "X", "Fila (+/-)" },
+  }
+  if #V.playlist_items > 0 then
+    hints[#hints + 1] = { "START", string.format("Tocar Fila (%d)", #V.playlist_items) }
+    hints[#hints + 1] = { "SELECT", "Limpar" }
+  else
+    hints[#hints + 1] = { "START", "Tocar Tudo" }
+  end
+  hints[#hints + 1] = { bck, "Voltar" }
+  hints[#hints + 1] = { "L1/R1", "Pular 6" }
+  ui.hints(hints, 448)
 end
 
 return V

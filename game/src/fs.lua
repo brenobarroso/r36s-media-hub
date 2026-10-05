@@ -152,6 +152,15 @@ function M.find_media_root(kind)
     return nil
   end
 
+  -- Check user configured folder in state
+  local ok, app = pcall(require, "src.app")
+  if ok and app and app.state and app.state[kind .. "_dir"] then
+    local configured = app.state[kind .. "_dir"]
+    if configured ~= "" and M.dir_exists(configured) then
+      return configured
+    end
+  end
+
   if U.is_windows() then
     local win_candidates = {
       music = { os.getenv("R36S_MUSIC_DIR"), (os.getenv("USERPROFILE") or "C:") .. "/Music", "C:/Users/barro/.gemini/antigravity/scratch/testmusic", "C:/" },

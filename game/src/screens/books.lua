@@ -41,7 +41,7 @@ local function get_file_size(path)
 end
 
 function B.enter(dir_path)
-  B.dir = dir_path or B.dir or find_book_root()
+  B.dir = dir_path or find_book_root()
   B.entries = {}
   B.sel = 1
   B.scroll = 0
@@ -113,6 +113,7 @@ function B.action(a)
     B.scroll = B.sel - VISIBLE_ROWS
   end
   B.scroll = math.max(0, B.scroll)
+  return true
 end
 
 function B.update(dt)
@@ -137,7 +138,7 @@ function B.draw()
   if #B.entries == 0 then
     ui.set(ui.c.dim)
     love.graphics.setFont(ui.f.body)
-    love.graphics.printf("Nenhum livro ou manga encontrado.\nColoque arquivos EPUB/MOBI/CBZ/TXT em /roms2/books", 0, 200, ui.W, "center")
+    love.graphics.printf("Nenhum livro ou manga encontrado.\nPasta: " .. (B.dir or "não definida"), 0, 200, ui.W, "center")
   end
 
   -- Book List
