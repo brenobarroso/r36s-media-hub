@@ -1,0 +1,207 @@
+-- R36S Music Player (LÖVE 11.5 / PortMaster)
+io.stdout:setvbuf("no")
+io.stderr:setvbuf("no")
+
+local app = require("src.app")
+local ui = require("src.ui")
+local input = require("src.input")
+local player = require("src.player")
+local fs = require("src.fs")
+local state = require("src.state")
+
+local canvas
+local debug_on = false
+local debug_log = {}
+local frame_t0 = 0
+local selftest = nil
+
+local FRAME_TIME = 1 / 30 - 0.003 -- ~30 fps cap: plenty for a music player, saves battery
+
+local function dbg(s)
+  table.insert(debug_log, 1, s)
+  debug_log[9] = nil
+end
+
+local function save_state()
+  local st = app.state
+  local browser = app.screens.browser
+  if browser and browser.current_dir() then st.last_dir = browser.current_dir() end
+  st.volume = string.format("%.2f", player.volume)
+  st.shuffle = player.shuffle and "1" or "0"
+  st.repeat_mode = player.repeat_mode
+  st.swap_ab = input.swap_ab and "1" or "0"
+  state.save(st)
+end
+
+local function volume_toast()
+  ui.toast(string.format("Volume %d%%", math.floor(player.volume * 100 + 0.5)))
+end
+
+local function on_action(a)
+  -- Select is a modifier: Select+Start quits, Select+X swaps A/B, Select+Y toggles the debug overlay.
+  if a == "select" and input.is_held("start") then
+    love.event.quit()
+    return
+  end
+  if input.is_held("select") and a ~= "select" then
+    if a == "start" then
+      love.event.quit()
+    elseif a == "x" then
+      input.swap_ab = not input.swap_ab
+      ui.toast(input.swap_ab and "Botões A/B trocados" or "Botões A/B padrão", 1.6)
+    elseif a == "y" then
+      debug_on = not debug_on
+    end
+    return
+  end
+
+  if a == "start" then
+    player.toggle()
+    ui.toast(player.status == "playing" and "Tocando" or (player.status == "paused" and "Pausado" or "Nada tocando"))
+  elseif a == "l1" then
+    player.prev()
+  elseif a == "r1" then
+    player.next()
+  elseif a == "l2" then
+    player.change_volume(-0.05)
+    volume_toast()
+  elseif a == "r2" then
+    player.change_volume(0.05)
+    volume_toast()
+  elseif a ~= "select" then
+    app.current.action(a)
+  end
+end
+
+function love.load()
+  love.graphics.setDefaultFilter("linear", "linear")
+  love.mouse.setVisible(false)
+  ui.load()
+  canvas = love.graphics.newCanvas(ui.W, ui.H)
+
+  local st = state.load()
+  app.state = st
+  app.root = fs.find_music_root()
+
+  player.set_volume(tonumber(st.volume) or 0.8)
+  player.shuffle = (st.shuffle == "1")
+  if st.repeat_mode == "all" or st.repeat_mode == "one" then player.repeat_mode = st.repeat_mode end
+  input.swap_ab = (st.swap_ab == "1")
+  input.on_action = on_action
+
+  app.screens.browser = require("src.screens.browser")
+  app.screens.nowplaying = require("src.screens.nowplaying")
+
+  local start = st.last_dir
+  if not start or not fs.is_inside(start, app.root) or not fs.dir_exists(start) then
+    start = app.root
+  end
+  app.show("browser", start)
+
+  if os.getenv("R36S_AUTOTEST") == "1" then
+    selftest = require("src.selftest")
+    selftest.start()
+  end
+end
+
+function love.update(dt)
+  frame_t0 = love.timer.getTime()
+  app.time = app.time + dt
+  input.update(dt)
+  player.update(dt)
+  ui.update(dt)
+  if app.current.update then app.current.update(dt) end
+  if selftest then selftest.update(dt) end
+end
+
+function love.draw()
+  love.graphics.setCanvas(canvas)
+  love.graphics.clear(ui.c.bg[1], ui.c.bg[2], ui.c.bg[3], 1)
+  love.graphics.setColor(1, 1, 1, 1)
+  app.current.draw()
+  ui.draw_toast()
+
+  if debug_on then
+    ui.set({ 0, 0, 0 }, 0.8)
+    love.graphics.rectangle("fill", 0, 0, ui.W, 150)
+    love.graphics.setFont(ui.f.tiny)
+    ui.set(ui.c.text)
+    love.graphics.print(string.format("DEBUG  pad_seen=%s swap=%s joysticks=%d root=%s", tostring(input.pad_seen),
+      tostring(input.swap_ab), love.joystick.getJoystickCount(), app.root), 8, 4)
+    for i, l in ipairs(debug_log) do love.graphics.print(l, 8, 4 + i * 16) end
+  end
+
+  love.graphics.setCanvas()
+  love.graphics.clear(0, 0, 0, 1)
+  local ww, wh = love.graphics.getDimensions()
+  local s = math.min(ww / ui.W, wh / ui.H)
+  love.graphics.setBlendMode("alpha", "premultiplied")
+  love.graphics.setColor(1, 1, 1, 1)
+  love.graphics.draw(canvas, (ww - ui.W * s) / 2, (wh - ui.H * s) / 2, 0, s, s)
+  love.graphics.setBlendMode("alpha")
+
+  local spare = FRAME_TIME - (love.timer.getTime() - frame_t0)
+  if spare > 0 then love.timer.sleep(spare) end
+end
+
+-- Input events ---------------------------------------------------------------
+function love.keypressed(key)
+  dbg("key " .. key)
+  input.keypressed(key)
+end
+
+function love.keyreleased(key)
+  input.keyreleased(key)
+end
+
+function love.gamepadpressed(_, button)
+  dbg("pad " .. button)
+  input.padpressed(button)
+end
+
+function love.gamepadreleased(_, button)
+  input.padreleased(button)
+end
+
+function love.gamepadaxis(_, axis, value)
+  input.padaxis(axis, value)
+end
+
+function love.joystickadded(j)
+  dbg("joystick+ " .. j:getName() .. " gamepad=" .. tostring(j:isGamepad()))
+end
+
+function love.joystickpressed(j, b)
+  if not j:isGamepad() then dbg("raw joy button " .. b) end
+end
+
+function love.quit()
+  save_state()
+end
+
+-- Show errors on screen (and in the PortMaster log) and exit on any button.
+function love.errorhandler(msg)
+  local trace = (debug.traceback("Error: " .. tostring(msg), 2):gsub("\t", "    "))
+  io.stderr:write(trace, "\n")
+  print(trace)
+  if not (love.window and love.graphics and love.event) then return end
+  pcall(love.audio.stop)
+  love.graphics.reset()
+  love.graphics.setFont(love.graphics.newFont(14))
+  local t0 = love.timer.getTime()
+  return function()
+    love.event.pump()
+    for e in love.event.poll() do
+      if e == "quit" or e == "keypressed" or e == "joystickpressed" or e == "gamepadpressed" then
+        return 1
+      end
+    end
+    if love.timer.getTime() - t0 > 30 then return 1 end
+    love.graphics.clear(0.30, 0.08, 0.08)
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf("R36S Music Player - erro\n\n" .. trace .. "\n\n(pressione qualquer botao para sair)",
+      16, 16, love.graphics.getWidth() - 32)
+    love.graphics.present()
+    love.timer.sleep(0.05)
+  end
+end
