@@ -1,60 +1,113 @@
-# R36S Music Player
+# 🎮 R36S Media Hub
 
-Player de música (MP3) para o R36S (dArkOS/ArkOS) feito em **LÖVE 11.5** e empacotado como **PortMaster**.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Platform: R36S / RK3326](https://img.shields.io/badge/Platform-R36S%20%2F%20RK3326-orange.svg)](https://github.com)
+[![Engine: LÖVE 11.5](https://img.shields.io/badge/Engine-L%C3%96VE%2011.5-pink.svg)](https://love2d.org)
+[![PortMaster](https://img.shields.io/badge/Runtime-PortMaster-brightgreen.svg)](https://portmaster.games)
 
-## Funcionalidades (v0.1)
-- Navegador de pastas (pastas primeiro, ordem natural; só mostra mp3/ogg/flac/wav)
-- Tela **Tocando agora**: capa (embutida no ID3 ou `cover.jpg`/`folder.jpg`), título/artista/álbum, progresso, volume, shuffle/repeat
-- Fila automática da pasta, próxima faixa automática, shuffle, repeat (off/todas/uma)
-- Continua tocando enquanto você navega nas pastas (mini player no rodapé)
-- Lembra última pasta, volume, shuffle e repeat
+Central Multimídia moderna, fluida e completa desenvolvida sob medida para consoles portáteis **R36S** e dispositivos baseados no chip **Rockchip RK3326** rodando **dArkOSRE / ArkOS** via **PortMaster**.
 
-## Controles
-| Botão | Navegador | Tocando agora |
-|---|---|---|
-| D-pad ↑↓ | mover | volume |
-| D-pad ←→ | página ↑↓ | buscar ∓5 s |
-| A | abrir pasta / tocar | play/pause |
-| B | voltar | voltar ao navegador |
-| X | ir para "Tocando" | shuffle |
-| Y | tocar pasta (recursivo) | repeat |
-| L1 / R1 | faixa anterior / próxima (global) | idem |
-| L2 / R2 | volume −/+ (global) | idem |
-| START | play/pause (global) | idem |
-| **SELECT+START** | sair | sair |
-| SELECT+X | trocar A/B (se o layout vier invertido) | |
-| SELECT+Y | overlay de debug (botões, joystick) | |
+Transforme seu videogame portátil retrô em um reprodutor de músicas com equalizador, reprodutor de vídeos, galeria de fotos em tela cheia e leitor de livros digitais e mangás com salvamento automático de progresso.
 
-> Se A/B vierem trocados no seu aparelho, use **SELECT+X** (fica salvo).
+---
 
-## Pasta de músicas
-Ordem de busca: variável `R36S_MUSIC_DIR` → primeira linha de `music_dir.txt` (dentro de `ports/r36smusic/`) →
-`/roms2/music`, `/roms/music`, `/roms2/bgmusic`, `/roms/bgmusic`, `~/Music`, `/roms`.
+## 🌟 Funcionalidades Principais
 
-## Instalar no R36S
-1. `powershell -File tools\package.ps1` → gera `dist\r36s-music-player.zip`
-2. Extraia na pasta `ports` do cartão SD (`/roms/ports` ou `/roms2/ports`), de forma que fiquem
-   `ports/R36S Music Player.sh` e `ports/r36smusic/game/...`
-3. Reinicie o EmulationStation → Ports → **R36S Music Player**
-4. Requer o PortMaster instalado com o runtime `love_11.5` (o PortMaster baixa sozinho).
+* **🏠 Home Screen Intuitiva:**
+  * Navegação suave por cards 2×2 (*Músicas*, *Vídeos*, *Fotos*, *Livros*).
+  * Barra superior integrada com relógio em tempo real e leitura de bateria via *sysfs* (porcentagem e indicador de carregamento).
+  * **Mini-Player integrado:** exibe a música ativa no rodapé ao navegar pelo menu, com controle rápido de reprodução (`START`).
 
-## Desenvolver no PC (Windows)
+* **🎵 Músicas & Equalizador OpenAL:**
+  * Reprodução contínua de arquivos `.mp3`, `.ogg`, `.flac`, `.wav` com navegação estruturada por pastas.
+  * Extração nativa de tags ID3v1/ID3v2 e artes de capa integradas ou acompanhantes (`cover.jpg`, `folder.jpg`).
+  * **Equalizador de Áudio Integrado (OpenAL EFX):** predefinições sonoras afinadas para fones e alto-falante (*Flat*, *Bass Boost*, *Rock*, *Pop*, *Voz / Acústico*, *Eletrônica*).
+  * Modos Aleatório (*Shuffle*), Repetição e controle de volume preciso.
+
+* **🖼️ Galeria de Fotos & Visualizador Fullscreen:**
+  * Navegação por pastas com grade de miniaturas 4×3 e cache de redimensionamento eficiente para economizar RAM.
+  * Visualizador em tela cheia com **Zoom contínuo (até 3.5x)** e navegação panorâmica (*pan* com direcional).
+  * **Rotação de 90°** com um botão (para fotos verticais).
+  * **Modo Slideshow automático** com transição temporizada.
+
+* **🎬 Vídeos & Filmes:**
+  * Suporte aos principais formatos de vídeo: `.mp4`, `.mkv`, `.avi`, `.mov`, `.wmv`, `.webm`, `.ogv`.
+  * Detecção de cartazes e pôsteres acompanhantes (`filme.jpg` ou `poster.jpg`).
+  * Reprodução acelerada por hardware via `mpv` (KMS/DRM) / `ffplay`, pausando e retomando a interface sem engasgos.
+
+* **📖 Leitor de Livros Digitais & Mangás:**
+  * Suporte nativo a **EPUB**, **MOBI / AZW** (Kindle descomprimido nativamente em PalmDOC), **TXT** e quadrinhos/mangás **CBZ**.
+  * Quebra inteligente de texto em páginas, alternância de tamanho de fonte (*Normal* e *Grande*) e paletas de cor para leitura (*Padrão*, *Sépia para descanso visual* e *Preto AMOLED*).
+  * Leitor de mangás com zoom e movimentação panorâmica para leitura de balões de texto pequenos.
+  * **Marcador de Página automático (`bookmarks.txt`):** memorize a última página lida de cada livro para continuar exatamente de onde parou.
+
+* **⚙️ Configurações & Otimização de Bateria:**
+  * Temas visuais completos: **Escuro (Dark)**, **Preto Puro (AMOLED `#000000`)** e **Claro (Light)**.
+  * Alternância entre layouts de controle **Nintendo (A confirma / B volta)** e **Xbox (B confirma / A volta)**.
+  * Controle físico de iluminação do display IPS via *sysfs*.
+  * **Screen Dimmer Timer:** opção para desligar a tela automaticamente após tempo inativo de reprodução musical para economizar bateria.
+
+---
+
+## 🎮 Controles Rápidos
+
+| Botão / Atalho | Ação Principal |
+|---|---|
+| **D-Pad** | Navegação em listas, menus, fotos e texto |
+| **A** *(ou B no layout Xbox)* | Abrir pasta / Tocar faixa / Confirmar |
+| **B** *(ou A no layout Xbox)* | Voltar de pasta / Retornar ao menu anterior |
+| **START** | Play / Pause global de música |
+| **SELECT** *(na Home)* | Abre o menu de Configurações |
+| **SELECT + START** | **Sair imediatamente do Media Hub** (retorna ao EmulationStation) |
+| **SELECT + X** | Alternar inversão de botões A/B |
+| **SELECT + Y** | Ativar HUD de depuração |
+| **L1 / R1** | Faixa anterior / próxima (ou saltar páginas) |
+| **L2 / R2** | Volume geral − / + (ou zoom em fotos/mangás) |
+
+---
+
+## 📁 Estrutura de Pastas no Cartão SD
+
+Ao inicializar, o aplicativo procura mídias nas seguintes pastas (no Cartão 1 `/roms` ou Cartão 2 `/roms2`):
+* `music/` &rarr; Suas faixas e álbuns musicais. *(Também lê `/roms2/ports/gmu-music-player/music` automaticamente).*
+* `photos/` &rarr; Fotos e imagens organizadas por pastas ou na raiz.
+* `videos/` &rarr; Filmes, séries e vídeos.
+* `books/` &rarr; E-books (EPUB, MOBI, TXT) e mangás (CBZ).
+
+*(Você também pode definir qualquer caminho customizado criando o arquivo `ports/r36smusic/music_dir.txt`).*
+
+---
+
+## 🚀 Instalação Rápida
+
+1. Gere o pacote de distribuição executando no PowerShell:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File tools\package.ps1
+   ```
+2. Ou envie diretamente para o cartão SD conectado no PC:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File tools\deploy_to_sd.ps1 -Drive E:
+   ```
+3. No console, acerte a lista e execute: **Ports** &rarr; **R36S Music Player**.
+
+> 📖 **Para instruções detalhadas de instalação, dependências do PortMaster e solução de dúvidas, consulte o [Manual Completo de Uso (MANUAL.md)](MANUAL.md).**
+
+---
+
+## 🛠️ Desenvolvimento e Testes Automatizados no PC
+
+O projeto pode ser executado diretamente no Windows ou Linux usando o LÖVE 11.5 padrão:
+
 ```powershell
-# precisa do LÖVE 11.5 (https://love2d.org)
-$env:R36S_MUSIC_DIR = "C:/Users/voce/Music"
-love game
-```
-- Teclado: setas, Enter (A), Backspace (B), X, Y, Q/E (L1/R1), A/D (L2/R2), Espaço (Start), Tab (Select).
-- Em Windows, caminhos com acentos não abrem via `io.open` (limitação do Windows/LuaJIT). No Linux/R36S não há problema.
-- Smoke test automatizado: `tools\selftest.ps1 -Love <lovec.exe> -Music <pasta>` (toca, busca, pausa, tira screenshots).
+# Executar a interface no PC:
+lovec game
 
-## Estrutura
-```
-game/            projeto LÖVE (main.lua, conf.lua, src/, assets/)
-portmaster/      launcher .sh do PortMaster
-tools/           package.ps1, selftest.ps1
+# Executar a suíte completa de smoke-tests com captura de telas:
+powershell -ExecutionPolicy Bypass -File tools\selftest.ps1 -Love <caminho_lovec.exe> -Music <pasta_musicas>
 ```
 
-## Pendências / ideias
-- Validar o launcher e o mapeamento de botões no aparelho real
-- Gapless, apagar a tela durante a reprodução (backlight), playlists/favoritos, busca
+---
+
+## 📄 Licença
+
+Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
