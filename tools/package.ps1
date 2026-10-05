@@ -27,7 +27,15 @@ try {
   $text = [System.IO.File]::ReadAllText($sh) -replace "`r`n", "`n"
   [System.IO.File]::WriteAllText($tmp, $text, (New-Object System.Text.UTF8Encoding($false)))
   Add-File $tmp "R36S Music Player.sh"
-  Remove-Item $tmp
+  # GPTK fallback: force LF line endings.
+  $gptk = Join-Path $root "portmaster\r36smusic.gptk"
+  if (Test-Path $gptk) {
+    $tmp2 = [System.IO.Path]::GetTempFileName()
+    $text2 = [System.IO.File]::ReadAllText($gptk) -replace "`r`n", "`n"
+    [System.IO.File]::WriteAllText($tmp2, $text2, (New-Object System.Text.UTF8Encoding($false)))
+    Add-File $tmp2 "r36smusic/r36smusic.gptk"
+    Remove-Item $tmp2
+  }
 
   $gameDir = (Resolve-Path (Join-Path $root "game")).Path
   Get-ChildItem $gameDir -Recurse -File | ForEach-Object {

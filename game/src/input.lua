@@ -11,7 +11,7 @@ local PAD = {
   dpup = "up", dpdown = "down", dpleft = "left", dpright = "right",
   a = "accept", b = "back", x = "x", y = "y",
   leftshoulder = "l1", rightshoulder = "r1",
-  start = "start", back = "select",
+  start = "start", back = "select", guide = "select",
 }
 
 local KEYS = {
@@ -19,6 +19,7 @@ local KEYS = {
   ["return"] = "accept", kpenter = "accept",
   backspace = "back", escape = "back",
   x = "x", y = "y", q = "l1", e = "r1", a = "l2", d = "r2",
+  pageup = "l1", pagedown = "r1", home = "l2", ["end"] = "r2",
   space = "start", tab = "select",
 }
 

@@ -42,7 +42,14 @@ export R36S_FULLSCREEN=1
 
 pm_platform_helper "$LOVE_BINARY"
 
-$GPTOKEYB "$LOVE_GPTK" &
+GPTK_CONF="${LOVE_GPTK}"
+if [ -z "$GPTK_CONF" ] || [ ! -f "$GPTK_CONF" ]; then
+  GPTK_CONF="$GAMEDIR/r36smusic.gptk"
+fi
+
+if [ -n "$GPTOKEYB" ]; then
+  $GPTOKEYB "$GPTK_CONF" &
+fi
 $LOVE_RUN "$GAMEDIR/game"
 
 pm_finish
