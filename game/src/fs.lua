@@ -111,18 +111,22 @@ local function strip_slash(p)
   return (p:gsub("\\", "/"))
 end
 
-local function read_first_line(path)
+local function read_lines(path)
   local f = io.open(path, "r")
-  if not f then return nil end
-  local l = f:read("*l")
+  if not f then return {} end
+  local lines = {}
+  for l in f:lines() do
+    l = U.trim(l:gsub("\r$", ""))
+    if l ~= "" and not l:match("^#") then
+      lines[#lines + 1] = l
+    end
+  end
   f:close()
-  if l then l = U.trim(l) end
-  if l and l ~= "" then return l end
-  return nil
+  return lines
 end
 
 -- Decides which folder is the "library root".
--- Order: env R36S_MUSIC_DIR, music_dir.txt next to the app, then common locations.
+-- Order: env R36S_MUSIC_DIR, lines in music_dir.txt, then common locations.
 function M.find_music_root()
   local function try(p)
     if not p or p == "" then return nil end
@@ -137,8 +141,10 @@ function M.find_music_root()
   local base = love.filesystem.getSourceBaseDirectory()
   local src = love.filesystem.getSource()
   for _, f in ipairs({ base .. "/music_dir.txt", src .. "/music_dir.txt" }) do
-    r = try(read_first_line(f))
-    if r then return r end
+    for _, line in ipairs(read_lines(f)) do
+      r = try(line)
+      if r then return r end
+    end
   end
 
   local candidates
@@ -147,6 +153,8 @@ function M.find_music_root()
   else
     local home = os.getenv("HOME") or "/root"
     candidates = {
+      "/roms2/ports/gmu-music-player/music",
+      "/roms/ports/gmu-music-player/music",
       "/roms2/music", "/roms2/Music", "/roms/music", "/roms/Music",
       "/roms2/bgmusic", "/roms/bgmusic", home .. "/Music", "/roms", "/",
     }

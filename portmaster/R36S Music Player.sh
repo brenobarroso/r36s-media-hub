@@ -13,6 +13,12 @@ elif [ -d "/opt/tools/PortMaster/" ]; then
   controlfolder="/opt/tools/PortMaster"
 elif [ -d "$XDG_DATA_HOME/PortMaster/" ]; then
   controlfolder="$XDG_DATA_HOME/PortMaster"
+elif [ -d "/roms2/tools/PortMaster/" ]; then
+  controlfolder="/roms2/tools/PortMaster"
+elif [ -d "/roms/tools/PortMaster/" ]; then
+  controlfolder="/roms/tools/PortMaster"
+elif [ -d "/roms2/ports/PortMaster/" ]; then
+  controlfolder="/roms2/ports/PortMaster"
 else
   controlfolder="/roms/ports/PortMaster"
 fi
@@ -22,7 +28,11 @@ source "$controlfolder/control.txt"
 get_controls
 [ -f "${controlfolder}/mod_${CFW_NAME}.txt" ] && source "${controlfolder}/mod_${CFW_NAME}.txt"
 
-GAMEDIR="/$directory/ports/r36smusic"
+if [ -n "$directory" ] && [ -d "/$directory/ports/r36smusic" ]; then
+  GAMEDIR="/$directory/ports/r36smusic"
+else
+  GAMEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/r36smusic"
+fi
 
 # Keep LÖVE's save data (state.txt) inside the port folder.
 export XDG_DATA_HOME="$GAMEDIR/saves"
