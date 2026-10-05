@@ -19,26 +19,7 @@ local BOOK_EXT = {
 }
 
 local function find_book_root()
-  local candidates
-  if U.is_windows() then
-    candidates = {
-      (os.getenv("USERPROFILE") or "C:") .. "/Documents",
-      "C:/Users/barro/.gemini/antigravity/scratch/testbooks",
-      "C:/",
-    }
-  else
-    candidates = {
-      "/roms2/books", "/roms2/Books", "/roms2/ebooks", "/roms2/Ebooks",
-      "/roms/books", "/roms/Books", "/roms/ebooks", "/roms/Ebooks",
-      "/roms2/comics", "/roms2/Comics", "/roms/comics", "/roms/Comics",
-      "/roms2/media/books", "/roms/media/books",
-      "/roms2", "/roms", "/",
-    }
-  end
-  for _, c in ipairs(candidates) do
-    if fs.dir_exists(c) then return c end
-  end
-  return "/"
+  return fs.find_media_root("books")
 end
 
 local function format_bytes(bytes)

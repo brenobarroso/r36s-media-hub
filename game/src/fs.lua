@@ -34,6 +34,24 @@ function M.dir_exists(p)
   return popen_lines(cmd)[1] == "y"
 end
 
+function M.dir_has_entries(p)
+  if not p or p == "" then return false end
+  local cmd
+  if U.is_windows() then
+    local wd = winpath(p)
+    cmd = 'chcp 65001>nul & dir /b /a "' .. wd .. '" 2>nul'
+  else
+    cmd = "ls -1A -- " .. U.sh_quote(p) .. " 2>/dev/null | head -n 1"
+  end
+  local lines = popen_lines(cmd)
+  for _, l in ipairs(lines) do
+    if l and l:gsub("%s+", "") ~= "" then
+      return true
+    end
+  end
+  return false
+end
+
 local function raw_list(dir)
   local dirs, files = {}, {}
   if U.is_windows() then
@@ -125,9 +143,8 @@ local function read_lines(path)
   return lines
 end
 
--- Decides which folder is the "library root".
--- Order: env R36S_MUSIC_DIR, lines in music_dir.txt, then common locations.
-function M.find_music_root()
+-- Decides which folder is the library root for music, photos, videos, books.
+function M.find_media_root(kind)
   local function try(p)
     if not p or p == "" then return nil end
     p = strip_slash(p)
@@ -135,35 +152,117 @@ function M.find_music_root()
     return nil
   end
 
-  local r = try(os.getenv("R36S_MUSIC_DIR"))
-  if r then return r end
-
-  local base = love.filesystem.getSourceBaseDirectory()
-  local src = love.filesystem.getSource()
-  for _, f in ipairs({ base .. "/music_dir.txt", src .. "/music_dir.txt" }) do
-    for _, line in ipairs(read_lines(f)) do
-      r = try(line)
+  if U.is_windows() then
+    local win_candidates = {
+      music = { os.getenv("R36S_MUSIC_DIR"), (os.getenv("USERPROFILE") or "C:") .. "/Music", "C:/Users/barro/.gemini/antigravity/scratch/testmusic", "C:/" },
+      photos = { (os.getenv("USERPROFILE") or "C:") .. "/Pictures", "C:/Users/barro/.gemini/antigravity/scratch/testphotos", "C:/" },
+      videos = { (os.getenv("USERPROFILE") or "C:") .. "/Videos", "C:/Users/barro/.gemini/antigravity/scratch/testvideos", "C:/" },
+      books = { (os.getenv("USERPROFILE") or "C:") .. "/Documents", "C:/Users/barro/.gemini/antigravity/scratch/testbooks", "C:/" },
+    }
+    local list = win_candidates[kind] or {}
+    for _, c in ipairs(list) do
+      local r = try(c)
       if r then return r end
+    end
+    return "C:/"
+  end
+
+  -- Linux / ArkOS / PortMaster:
+  -- Detect primary SD card based on port installation directory
+  local base = love.filesystem.getSourceBaseDirectory() or ""
+  local primary = "/roms"
+  local secondary = "/roms2"
+  if base:match("^/roms2") then
+    primary = "/roms2"
+    secondary = "/roms"
+  end
+
+  local candidates = {}
+  if kind == "music" then
+    local r = try(os.getenv("R36S_MUSIC_DIR"))
+    if r then return r end
+    local src = love.filesystem.getSource()
+    for _, f in ipairs({ base .. "/music_dir.txt", src .. "/music_dir.txt" }) do
+      for _, line in ipairs(read_lines(f)) do
+        r = try(line)
+        if r then return r end
+      end
+    end
+    candidates = {
+      primary .. "/ports/gmu-music-player/music",
+      primary .. "/music", primary .. "/Music",
+      secondary .. "/ports/gmu-music-player/music",
+      secondary .. "/music", secondary .. "/Music",
+      primary .. "/bgmusic", secondary .. "/bgmusic",
+      "/root/Music", primary,
+    }
+  elseif kind == "photos" then
+    candidates = {
+      primary .. "/photos", primary .. "/Photos",
+      primary .. "/pictures", primary .. "/Pictures",
+      primary .. "/media/photos",
+      secondary .. "/photos", secondary .. "/Photos",
+      secondary .. "/pictures", secondary .. "/Pictures",
+      secondary .. "/media/photos",
+      "/root/Pictures", primary,
+    }
+  elseif kind == "videos" then
+    candidates = {
+      primary .. "/videos", primary .. "/Videos",
+      primary .. "/movies", primary .. "/Movies",
+      primary .. "/ports/videos",
+      secondary .. "/videos", secondary .. "/Videos",
+      secondary .. "/movies", secondary .. "/Movies",
+      secondary .. "/ports/videos",
+      "/root/Videos", primary,
+    }
+  elseif kind == "books" then
+    candidates = {
+      primary .. "/books", primary .. "/Books",
+      primary .. "/ebooks", primary .. "/Ebooks",
+      primary .. "/comics", primary .. "/Comics",
+      primary .. "/media/books",
+      secondary .. "/books", secondary .. "/Books",
+      secondary .. "/ebooks", secondary .. "/Ebooks",
+      secondary .. "/comics", secondary .. "/Comics",
+      secondary .. "/media/books",
+      "/root/Books", primary,
+    }
+  end
+
+  -- PASS 1: Candidate on PRIMARY SD that has files/entries
+  for _, c in ipairs(candidates) do
+    if c:sub(1, #primary) == primary and M.dir_exists(c) and M.dir_has_entries(c) then
+      return c
     end
   end
 
-  local candidates
-  if U.is_windows() then
-    candidates = { (os.getenv("USERPROFILE") or "C:") .. "/Music", "C:/" }
-  else
-    local home = os.getenv("HOME") or "/root"
-    candidates = {
-      "/roms2/ports/gmu-music-player/music",
-      "/roms/ports/gmu-music-player/music",
-      "/roms2/music", "/roms2/Music", "/roms/music", "/roms/Music",
-      "/roms2/bgmusic", "/roms/bgmusic", home .. "/Music", "/roms", "/",
-    }
-  end
+  -- PASS 2: Candidate on SECONDARY SD that has files/entries
   for _, c in ipairs(candidates) do
-    r = try(c)
-    if r then return r end
+    if c:sub(1, #secondary) == secondary and M.dir_exists(c) and M.dir_has_entries(c) then
+      return c
+    end
   end
-  return "/"
+
+  -- PASS 3: First candidate on PRIMARY SD that exists (even if empty)
+  for _, c in ipairs(candidates) do
+    if c:sub(1, #primary) == primary and M.dir_exists(c) then
+      return c
+    end
+  end
+
+  -- PASS 4: First candidate on SECONDARY SD that exists
+  for _, c in ipairs(candidates) do
+    if M.dir_exists(c) then
+      return c
+    end
+  end
+
+  return primary
+end
+
+function M.find_music_root()
+  return M.find_media_root("music")
 end
 
 return M

@@ -37,9 +37,37 @@ local function load_current()
   local ok, img = pcall(function()
     local fd = love.filesystem.newFileData(data, U.basename(path))
     local imd = love.image.newImageData(fd)
-    local i = love.graphics.newImage(imd)
-    i:setFilter("linear", "linear")
-    return i
+    local iw, ih = imd:getDimensions()
+    local max_tex = 2048
+    if love.graphics and love.graphics.getSystemLimits then
+      local limits = love.graphics.getSystemLimits()
+      if limits and limits.texturesize then
+        max_tex = math.min(limits.texturesize, 2048)
+      end
+    end
+
+    local result
+    if math.max(iw, ih) > max_tex then
+      local s = max_tex / math.max(iw, ih)
+      local cw, ch = math.max(1, math.floor(iw * s)), math.max(1, math.floor(ih * s))
+      local raw = love.graphics.newImage(imd)
+      local canvas = love.graphics.newCanvas(cw, ch)
+      local prev = love.graphics.getCanvas()
+      love.graphics.setCanvas(canvas)
+      love.graphics.clear(0, 0, 0, 1)
+      love.graphics.setColor(1, 1, 1, 1)
+      love.graphics.draw(raw, 0, 0, 0, s, s)
+      love.graphics.setCanvas(prev)
+      raw:release()
+      result = canvas
+    else
+      local i = love.graphics.newImage(imd)
+      i:setFilter("linear", "linear")
+      result = i
+    end
+    imd:release()
+    fd:release()
+    return result
   end)
 
   if ok and img then

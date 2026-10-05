@@ -102,7 +102,7 @@ local function on_action(a)
   elseif a == "r2" then
     player.change_volume(0.05)
     volume_toast()
-  elseif a ~= "select" then
+  else
     app.current.action(a)
   end
 end

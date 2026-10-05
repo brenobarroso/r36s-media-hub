@@ -39,12 +39,16 @@ export XDG_DATA_HOME="$GAMEDIR/saves"
 export XDG_CONFIG_HOME="$GAMEDIR/saves"
 mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME"
 
-# Ensure standard media folders exist on the SD cards
-for base in /roms2 /roms; do
-  if [ -d "$base" ]; then
-    mkdir -p "$base/music" "$base/photos" "$base/videos" "$base/books" 2>/dev/null
-  fi
-done
+# Detect which SD card this port is installed on (/roms or /roms2)
+SD_ROOT="$(cd "$GAMEDIR/../.." 2>/dev/null && pwd)"
+if [ -d "$SD_ROOT" ] && [ "$SD_ROOT" != "/" ]; then
+  mkdir -p "$SD_ROOT/music" "$SD_ROOT/photos" "$SD_ROOT/videos" "$SD_ROOT/books" 2>/dev/null
+fi
+
+# Clean up any dummy empty directories accidentally created on rootfs /roms2
+if [ -d "/roms2" ] && ! grep -qs '/roms2 ' /proc/mounts; then
+  rmdir /roms2/photos /roms2/videos /roms2/books /roms2/music 2>/dev/null
+fi
 
 cd "$GAMEDIR" || exit 1
 

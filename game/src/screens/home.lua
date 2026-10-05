@@ -91,7 +91,7 @@ function H.action(a)
   elseif a == "accept" then
     local card = CARDS[H.sel]
     if card and card.action then card.action() end
-  elseif a == "select" then
+  elseif a == "select" or a == "y" then
     app.show("settings")
   elseif a == "x" then
     if player.cur then app.show("nowplaying") else ui.toast("Nenhuma música tocando", 1.2) end
@@ -114,15 +114,15 @@ local function draw_topbar()
   love.graphics.print("R36S Media Hub", 32, h / 2 - ui.f.head:getHeight() / 2)
 
   -- Settings hint button in top bar (fixed position)
-  local cfg_x = 220
-  local cfg_w = 108
+  local cfg_x = 210
+  local cfg_w = 124
   ui.set(ui.c.panel2)
   love.graphics.rectangle("fill", cfg_x, 8, cfg_w, 24, 4, 4)
   ui.set(ui.c.accent)
   love.graphics.setFont(ui.f.tiny)
-  love.graphics.print("SELECT", cfg_x + 8, 8 + 12 - ui.f.tiny:getHeight() / 2)
+  love.graphics.print("SELECT / Y", cfg_x + 6, 8 + 12 - ui.f.tiny:getHeight() / 2)
   ui.set(ui.c.dim)
-  love.graphics.print("Configs", cfg_x + 58, 8 + 12 - ui.f.tiny:getHeight() / 2)
+  love.graphics.print("Configs", cfg_x + 72, 8 + 12 - ui.f.tiny:getHeight() / 2)
 
   -- Right side: Clock
   local clock = os.date("%H:%M")
@@ -244,7 +244,7 @@ function H.draw()
   local acc = input.swap_ab and "B" or "A"
   local hints = {
     { acc, "Abrir" },
-    { "SELECT", "Configs" },
+    { "SELECT / Y", "Configs" },
   }
   if has_mini then
     hints[#hints + 1] = { "X", "Tocando" }

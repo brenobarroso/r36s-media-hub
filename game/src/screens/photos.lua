@@ -24,25 +24,7 @@ local PHOTO_EXT = {
 }
 
 local function find_photo_root()
-  local candidates
-  if U.is_windows() then
-    candidates = {
-      (os.getenv("USERPROFILE") or "C:") .. "/Pictures",
-      "C:/Users/barro/.gemini/antigravity/scratch/testphotos",
-      "C:/",
-    }
-  else
-    local home = os.getenv("HOME") or "/root"
-    candidates = {
-      "/roms2/photos", "/roms2/Photos", "/roms/photos", "/roms/Photos",
-      "/roms2/pictures", "/roms2/Pictures", "/roms/pictures", "/roms/Pictures",
-      "/roms2/media/photos", "/roms/media/photos", home .. "/Pictures", "/roms", "/",
-    }
-  end
-  for _, c in ipairs(candidates) do
-    if fs.dir_exists(c) then return c end
-  end
-  return "/"
+  return fs.find_media_root("photos")
 end
 
 local function load_thumbnail(path)
@@ -59,6 +41,7 @@ local function load_thumbnail(path)
     -- If image is larger than 256x256, downscale into small canvas to save RAM
     local iw, ih = imd:getDimensions()
     local max_dim = 160
+    local result
     if math.max(iw, ih) > max_dim then
       local s = max_dim / math.max(iw, ih)
       local cw, ch = math.max(1, math.floor(iw * s)), math.max(1, math.floor(ih * s))
@@ -71,12 +54,15 @@ local function load_thumbnail(path)
       love.graphics.draw(raw, 0, 0, 0, s, s)
       love.graphics.setCanvas(prev)
       raw:release()
-      return canvas
+      result = canvas
     else
       local i = love.graphics.newImage(imd)
       i:setFilter("linear", "linear")
-      return i
+      result = i
     end
+    imd:release()
+    fd:release()
+    return result
   end)
 
   if ok and img then

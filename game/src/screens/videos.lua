@@ -26,25 +26,7 @@ local POSTER_NAMES = {
 }
 
 local function find_video_root()
-  local candidates
-  if U.is_windows() then
-    candidates = {
-      (os.getenv("USERPROFILE") or "C:") .. "/Videos",
-      "C:/Users/barro/.gemini/antigravity/scratch/testvideos",
-      "C:/",
-    }
-  else
-    candidates = {
-      "/roms2/videos", "/roms2/Videos", "/roms2/movies", "/roms2/Movies",
-      "/roms/videos", "/roms/Videos", "/roms/movies", "/roms/Movies",
-      "/roms2/ports/videos", "/roms/ports/videos",
-      "/roms2", "/roms", "/",
-    }
-  end
-  for _, c in ipairs(candidates) do
-    if fs.dir_exists(c) then return c end
-  end
-  return "/"
+  return fs.find_media_root("videos")
 end
 
 local function format_bytes(bytes)
