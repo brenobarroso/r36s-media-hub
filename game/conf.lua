@@ -1,10 +1,10 @@
--- R36S Music Player - LÖVE configuration
+-- R36S Media Hub - LÖVE configuration
 function love.conf(t)
-  t.identity = "r36s-music-player"
+  t.identity = "r36s-media-hub"
   t.version = "11.5"
   t.console = false
 
-  t.window.title = "R36S Music Player"
+  t.window.title = "R36S Media Hub"
   t.window.width = 640
   t.window.height = 480
   t.window.resizable = false

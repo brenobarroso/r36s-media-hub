@@ -1,4 +1,4 @@
--- R36S Music Player (LÖVE 11.5 / PortMaster)
+-- R36S Media Hub (LÖVE 11.5 / PortMaster)
 io.stdout:setvbuf("no")
 io.stderr:setvbuf("no")
 
@@ -252,7 +252,7 @@ function love.errorhandler(msg)
     if love.timer.getTime() - t0 > 30 then return 1 end
     love.graphics.clear(0.30, 0.08, 0.08)
     love.graphics.setColor(1, 1, 1)
-    love.graphics.printf("R36S Music Player - erro\n\n" .. trace .. "\n\n(pressione qualquer botao para sair)",
+    love.graphics.printf("R36S Media Hub - erro\n\n" .. trace .. "\n\n(pressione qualquer botao para sair)",
       16, 16, love.graphics.getWidth() - 32)
     love.graphics.present()
     love.timer.sleep(0.05)

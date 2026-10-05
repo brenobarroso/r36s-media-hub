@@ -61,4 +61,11 @@ if (-not (Test-Path $readmeBooks)) {
   Set-Content -Path $readmeBooks -Value "Coloque seus livros, artigos e mangas nesta pasta.`r`nFormatos suportados: EPUB, MOBI (Kindle), TXT, CBZ (mangas/quadrinhos) e PDF.`r`nO leitor salva seu progresso e a ultima pagina lida automaticamente." -Encoding UTF8
 }
 
+# Remove old launcher script if present
+$oldSh = Join-Path $dest "R36S Music Player.sh"
+if (Test-Path $oldSh) {
+  Remove-Item $oldSh -Force
+  Write-Host "Removed old launcher: $oldSh"
+}
+
 Write-Host "Deployment completed successfully to $Drive\!"

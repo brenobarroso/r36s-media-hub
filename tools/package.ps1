@@ -22,11 +22,11 @@ try {
   }
 
   # Launcher: force LF line endings so bash is happy.
-  $sh = Join-Path $root "portmaster\R36S Music Player.sh"
+  $sh = Join-Path $root "portmaster\R36S Media Hub.sh"
   $tmp = [System.IO.Path]::GetTempFileName()
   $text = [System.IO.File]::ReadAllText($sh) -replace "`r`n", "`n"
   [System.IO.File]::WriteAllText($tmp, $text, (New-Object System.Text.UTF8Encoding($false)))
-  Add-File $tmp "R36S Music Player.sh"
+  Add-File $tmp "R36S Media Hub.sh"
   # GPTK fallback: force LF line endings.
   $gptk = Join-Path $root "portmaster\r36smusic.gptk"
   if (Test-Path $gptk) {
