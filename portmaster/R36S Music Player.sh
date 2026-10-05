@@ -39,6 +39,13 @@ export XDG_DATA_HOME="$GAMEDIR/saves"
 export XDG_CONFIG_HOME="$GAMEDIR/saves"
 mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME"
 
+# Ensure standard media folders exist on the SD cards
+for base in /roms2 /roms; do
+  if [ -d "$base" ]; then
+    mkdir -p "$base/music" "$base/photos" "$base/videos" "$base/books" 2>/dev/null
+  fi
+done
+
 cd "$GAMEDIR" || exit 1
 
 > "$GAMEDIR/log.txt" && exec > >(tee "$GAMEDIR/log.txt") 2>&1
