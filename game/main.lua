@@ -4,6 +4,7 @@ io.stderr:setvbuf("no")
 
 local app = require("src.app")
 local ui = require("src.ui")
+local theme = require("src.theme")
 local input = require("src.input")
 local player = require("src.player")
 local fs = require("src.fs")
@@ -14,12 +15,38 @@ local debug_on = false
 local debug_log = {}
 local frame_t0 = 0
 local selftest = nil
+local last_input_time = 0
+local screen_is_dimmed = false
 
-local FRAME_TIME = 1 / 30 - 0.003 -- ~30 fps cap: plenty for a music player, saves battery
+local FRAME_TIME = 1 / 30 - 0.003 -- ~30 fps cap: plenty for a media hub, saves battery
 
 local function dbg(s)
   table.insert(debug_log, 1, s)
   debug_log[9] = nil
+end
+
+local function set_backlight(level)
+  local candidates = {
+    "/sys/class/backlight/backlight/brightness",
+    "/sys/class/backlight/pwm-backlight/brightness",
+  }
+  for _, p in ipairs(candidates) do
+    local f = io.open(p, "w")
+    if f then
+      f:write(tostring(level))
+      f:close()
+      return
+    end
+  end
+end
+
+local function wake_screen()
+  if screen_is_dimmed then
+    screen_is_dimmed = false
+    local pct = tonumber(app.state.brightness) or 80
+    local max = 255
+    set_backlight(math.floor(max * (pct / 100)))
+  end
 end
 
 local function save_state()
@@ -30,6 +57,9 @@ local function save_state()
   st.shuffle = player.shuffle and "1" or "0"
   st.repeat_mode = player.repeat_mode
   st.swap_ab = input.swap_ab and "1" or "0"
+  st.theme = theme.current_name
+  st.brightness = app.state.brightness or "80"
+  st.screen_dimmer = app.state.screen_dimmer or "0"
   state.save(st)
 end
 
@@ -38,6 +68,9 @@ local function volume_toast()
 end
 
 local function on_action(a)
+  last_input_time = love.timer.getTime()
+  wake_screen()
+
   -- Select is a modifier: Select+Start quits, Select+X swaps A/B, Select+Y toggles the debug overlay.
   if a == "select" and input.is_held("start") then
     love.event.quit()
@@ -78,25 +111,25 @@ function love.load()
   love.mouse.setVisible(false)
   ui.load()
   canvas = love.graphics.newCanvas(ui.W, ui.H)
+  last_input_time = love.timer.getTime()
 
   local st = state.load()
   app.state = st
   app.root = fs.find_music_root()
 
+  if st.theme then theme.set(st.theme) end
   player.set_volume(tonumber(st.volume) or 0.8)
   player.shuffle = (st.shuffle == "1")
   if st.repeat_mode == "all" or st.repeat_mode == "one" then player.repeat_mode = st.repeat_mode end
   input.swap_ab = (st.swap_ab == "1")
   input.on_action = on_action
 
+  app.screens.home = require("src.screens.home")
   app.screens.browser = require("src.screens.browser")
   app.screens.nowplaying = require("src.screens.nowplaying")
+  app.screens.settings = require("src.screens.settings")
 
-  local start = st.last_dir
-  if not start or not fs.is_inside(start, app.root) or not fs.dir_exists(start) then
-    start = app.root
-  end
-  app.show("browser", start)
+  app.show("home")
 
   if os.getenv("R36S_AUTOTEST") == "1" then
     selftest = require("src.selftest")
@@ -110,6 +143,16 @@ function love.update(dt)
   input.update(dt)
   player.update(dt)
   ui.update(dt)
+
+  -- Screen Dimmer auto-power-off
+  local dimmer_sec = tonumber(app.state.screen_dimmer) or 0
+  if dimmer_sec > 0 and player.status == "playing" and not screen_is_dimmed then
+    if (love.timer.getTime() - last_input_time) > dimmer_sec then
+      screen_is_dimmed = true
+      set_backlight(0)
+    end
+  end
+
   if app.current.update then app.current.update(dt) end
   if selftest then selftest.update(dt) end
 end

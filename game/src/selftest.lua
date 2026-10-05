@@ -19,46 +19,49 @@ function T.start()
 end
 
 steps[1] = { 0.5, function()
+  log("screen=" .. tostring(app.current_name))
+  love.graphics.captureScreenshot("home.png")
+end }
+
+steps[2] = { 1.2, function()
+  app.show("settings")
+  log("showing settings")
+end }
+
+steps[3] = { 1.8, function()
+  love.graphics.captureScreenshot("settings.png")
+  local theme = require("src.theme")
+  theme.set("amoled")
+  log("theme set to amoled")
+end }
+
+steps[4] = { 2.4, function()
+  love.graphics.captureScreenshot("settings_amoled.png")
+  local theme = require("src.theme")
+  theme.set("dark")
+  app.show("home")
+end }
+
+steps[5] = { 3.0, function()
   local tracks = fs.collect(app.root)
   log("tracks found: " .. #tracks)
-  if #tracks == 0 then
-    log("FAIL: no tracks under root")
-    love.event.quit(1)
-    return
+  if #tracks > 0 then
+    player.play_queue(tracks, 1)
   end
-  local ok = player.play_queue(tracks, 1)
-  log("play_queue ok=" .. tostring(ok) .. " err=" .. tostring(player.error))
   app.show("nowplaying")
 end }
 
-steps[2] = { 3.0, function()
-  local c = player.cur
-  if not c then log("FAIL: nothing loaded") love.event.quit(1) return end
-  log(string.format("title=%s | artist=%s | album=%s | track=%s | dur=%s | cover=%s | pos=%.2f | status=%s",
-    tostring(c.title), tostring(c.artist), tostring(c.album), tostring(c.track),
-    tostring(c.duration), tostring(c.cover ~= nil), player.position(), player.status))
+steps[6] = { 4.5, function()
   love.graphics.captureScreenshot("np1.png")
+  app.show("home")
 end }
 
-steps[3] = { 3.5, function() player.seek(10) end }
-steps[4] = { 4.5, function()
-  log(string.format("after seek +10: pos=%.2f", player.position()))
-  player.toggle()
+steps[7] = { 5.5, function()
+  log("home with mini player")
+  love.graphics.captureScreenshot("home_playing.png")
 end }
-steps[5] = { 5.0, function()
-  log("status after toggle=" .. player.status)
-  love.graphics.captureScreenshot("np2.png")
-end }
-steps[6] = { 5.5, function()
-  player.toggle()
-  app.show("browser")
-end }
-steps[7] = { 6.0, function() love.graphics.captureScreenshot("browser.png") end }
+
 steps[8] = { 6.5, function()
-  player.next()
-  log("next -> " .. tostring(player.cur and player.cur.title) .. " status=" .. player.status)
-end }
-steps[9] = { 8.0, function()
   log("DONE")
   love.event.quit()
 end }

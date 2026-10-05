@@ -87,6 +87,8 @@ function B.action(a)
   elseif a == "back" then
     if dir ~= app.root then
       B.enter(U.dirname(dir), U.basename(dir))
+    else
+      app.show("home")
     end
   elseif a == "x" then
     if player.cur then app.show("nowplaying") else ui.toast("Nada tocando ainda", 1.4) end

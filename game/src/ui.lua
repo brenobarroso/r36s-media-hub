@@ -1,19 +1,16 @@
--- Theme, fonts and drawing helpers (all coordinates are in the 640x480 virtual screen).
 local utf8 = require("utf8")
+local theme = require("src.theme")
 
 local M = {}
 
 M.W, M.H = 640, 480
 
-M.c = {
-  bg      = { 0.055, 0.065, 0.095 },
-  panel   = { 0.095, 0.115, 0.165 },
-  panel2  = { 0.140, 0.165, 0.230 },
-  accent  = { 0.20, 0.82, 0.64 },
-  text    = { 0.94, 0.96, 0.98 },
-  dim     = { 0.58, 0.63, 0.72 },
-  faint   = { 0.28, 0.32, 0.41 },
-}
+-- Dynamic access to the active theme palette
+M.c = setmetatable({}, {
+  __index = function(_, k)
+    return theme.get()[k]
+  end,
+})
 
 function M.set(c, a)
   love.graphics.setColor(c[1], c[2], c[3], a or c[4] or 1)
@@ -148,6 +145,96 @@ function M.icon_repeat(x, y, s, one)
   if one then
     love.graphics.setFont(M.f.tiny)
     love.graphics.printf("1", x, y + s * 0.5 - M.f.tiny:getHeight() / 2, s, "center")
+  end
+end
+
+function M.icon_music(x, y, s)
+  -- Beamed eighth notes
+  local r = s * 0.16
+  love.graphics.circle("fill", x + s * 0.28, y + s * 0.76, r)
+  love.graphics.circle("fill", x + s * 0.72, y + s * 0.64, r)
+  love.graphics.setLineWidth(s * 0.09)
+  love.graphics.line(x + s * 0.36, y + s * 0.76, x + s * 0.36, y + s * 0.22)
+  love.graphics.line(x + s * 0.80, y + s * 0.64, x + s * 0.80, y + s * 0.10)
+  love.graphics.line(x + s * 0.34, y + s * 0.22, x + s * 0.82, y + s * 0.10)
+end
+
+function M.icon_video(x, y, s)
+  -- Clapperboard / movie screen
+  love.graphics.setLineWidth(2)
+  love.graphics.rectangle("line", x + s * 0.08, y + s * 0.15, s * 0.84, s * 0.70, 4, 4)
+  local ps = s * 0.32
+  local px, py = x + s * 0.40, y + s * 0.34
+  love.graphics.polygon("fill", px, py, px, py + ps, px + ps * 0.86, py + ps / 2)
+end
+
+function M.icon_photo(x, y, s)
+  -- Photo frame with sun & mountains
+  love.graphics.setLineWidth(2)
+  love.graphics.rectangle("line", x + s * 0.08, y + s * 0.12, s * 0.84, s * 0.76, 4, 4)
+  love.graphics.circle("fill", x + s * 0.68, y + s * 0.34, s * 0.10)
+  -- Mountains
+  love.graphics.polygon("fill", x + s * 0.16, y + s * 0.78, x + s * 0.44, y + s * 0.44, x + s * 0.62, y + s * 0.78)
+  love.graphics.polygon("fill", x + s * 0.48, y + s * 0.78, x + s * 0.68, y + s * 0.54, x + s * 0.84, y + s * 0.78)
+end
+
+function M.icon_book(x, y, s)
+  -- Open book
+  love.graphics.setLineWidth(2)
+  local mx, my = x + s * 0.50, y + s * 0.78
+  local lw, rw = x + s * 0.12, x + s * 0.88
+  local ty = y + s * 0.22
+  love.graphics.line(mx, my, mx, ty + s * 0.08)
+  love.graphics.line(mx, ty + s * 0.08, lw, ty)
+  love.graphics.line(lw, ty, lw, my - s * 0.08)
+  love.graphics.line(lw, my - s * 0.08, mx, my)
+  love.graphics.line(mx, ty + s * 0.08, rw, ty)
+  love.graphics.line(rw, ty, rw, my - s * 0.08)
+  love.graphics.line(rw, my - s * 0.08, mx, my)
+end
+
+function M.icon_gear(x, y, s)
+  -- Settings cog
+  local cx, cy = x + s * 0.5, y + s * 0.5
+  local r_out = s * 0.42
+  local r_in = s * 0.20
+  love.graphics.setLineWidth(s * 0.12)
+  love.graphics.circle("line", cx, cy, (r_out + r_in) / 2)
+  for i = 0, 7 do
+    local ang = i * (math.pi / 4)
+    local x1 = cx + math.cos(ang) * (r_in + 2)
+    local y1 = cy + math.sin(ang) * (r_in + 2)
+    local x2 = cx + math.cos(ang) * (r_out + 3)
+    local y2 = cy + math.sin(ang) * (r_out + 3)
+    love.graphics.line(x1, y1, x2, y2)
+  end
+  love.graphics.circle("fill", cx, cy, r_in * 0.6)
+end
+
+function M.icon_battery(x, y, s, pct, charging)
+  love.graphics.setLineWidth(2)
+  local bw, bh = s * 0.72, s * 0.42
+  local bx = x + s * 0.10
+  local by = y + (s - bh) / 2
+  love.graphics.rectangle("line", bx, by, bw, bh, 2, 2)
+  -- Terminal nub
+  love.graphics.rectangle("fill", bx + bw + 1, by + bh * 0.28, s * 0.07, bh * 0.44, 1, 1)
+  -- Fill
+  local fill_w = math.max(0, math.min(1, (pct or 100) / 100)) * (bw - 4)
+  if fill_w > 0 then
+    if (pct or 100) > 30 then
+      M.set(M.c.accent)
+    elseif (pct or 100) > 15 then
+      love.graphics.setColor(0.95, 0.75, 0.20, 1)
+    else
+      love.graphics.setColor(0.95, 0.30, 0.30, 1)
+    end
+    love.graphics.rectangle("fill", bx + 2, by + 2, fill_w, bh - 4, 1, 1)
+  end
+  if charging then
+    love.graphics.setColor(1, 0.9, 0.2, 1)
+    love.graphics.polygon("fill", bx + bw * 0.55, by - 1, bx + bw * 0.35, by + bh * 0.55, bx + bw * 0.50, by + bh * 0.55,
+      bx + bw * 0.45, by + bh + 1, bx + bw * 0.68, by + bh * 0.40, bx + bw * 0.52, by + bh * 0.40)
   end
 end
 
