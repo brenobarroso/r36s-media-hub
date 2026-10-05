@@ -118,7 +118,7 @@ function N.draw()
   local acc = input.swap_ab and "B" or "A"
   local bck = input.swap_ab and "A" or "B"
   ui.hints({
-    { acc, "Pausa" }, { bck, "Voltar" }, { "←  →", "Buscar" }, { "↑  ↓", "Volume" },
+    { acc, "Pausa" }, { bck, "Voltar" }, { "Esq/Dir", "Buscar" }, { "Cima/Baixo", "Volume" },
   }, 410)
   ui.hints({
     { "L1", "Anterior" }, { "R1", "Próxima" }, { "X", "Aleatório" }, { "Y", "Repetir" },
