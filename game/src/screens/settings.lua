@@ -62,7 +62,7 @@ function S.enter()
 end
 
 function S.action(a)
-  local total_items = 5
+  local total_items = 6
 
   if a == "up" then
     S.sel = S.sel - 1
@@ -104,6 +104,13 @@ function S.action(a)
       local v = player.change_volume(dir * 0.05)
       app.state.volume = string.format("%.2f", v)
       ui.toast(string.format("Volume: %d%%", math.floor(v * 100 + 0.5)), 1.0)
+    elseif S.sel == 6 then
+      -- Equalizer
+      local eq_name = player.cycle_eq()
+      if player.eq and player.eq.presets then
+        app.state.eq = player.eq.presets[player.eq.current].id
+      end
+      ui.toast("Equalizador: " .. eq_name, 1.2)
     end
   end
 end
@@ -154,10 +161,16 @@ function S.draw()
       type = "bar",
       frac = player.volume,
     },
+    {
+      title = "Equalizador de Áudio",
+      desc = "Predefinições de som (Bass Boost, Rock, Pop, etc.)",
+      val = player.get_eq_name(),
+      type = "select",
+    },
   }
 
-  local list_y = 58
-  local row_h = 58
+  local list_y = 50
+  local row_h = 56
   local card_w = ui.W - 36
   local card_x = 18
 
@@ -181,37 +194,37 @@ function S.draw()
     -- Title & Description
     ui.set(is_sel and ui.c.text or ui.c.text, is_sel and 1.0 or 0.88)
     love.graphics.setFont(ui.f.bodyb)
-    love.graphics.print(item.title, card_x + 18, y + 8)
+    love.graphics.print(item.title, card_x + 18, y + 6)
 
     ui.set(ui.c.dim)
     love.graphics.setFont(ui.f.tiny)
-    love.graphics.print(item.desc, card_x + 18, y + 30)
+    love.graphics.print(item.desc, card_x + 18, y + 28)
 
     -- Right side control
     local rw = 220
     local rx = card_x + card_w - rw - 14
 
     if item.type == "bar" then
-      ui.bar(rx, y + 20, rw - 50, 8, item.frac)
+      ui.bar(rx, y + 19, rw - 50, 8, item.frac)
       ui.set(ui.c.accent)
       love.graphics.setFont(ui.f.small)
-      love.graphics.printf(item.val, rx + rw - 44, y + 24 - ui.f.small:getHeight() / 2, 44, "right")
+      love.graphics.printf(item.val, rx + rw - 44, y + 23 - ui.f.small:getHeight() / 2, 44, "right")
     else
       ui.set(ui.c.panel2)
-      love.graphics.rectangle("fill", rx, y + 10, rw, 30, 6, 6)
+      love.graphics.rectangle("fill", rx, y + 9, rw, 30, 6, 6)
       ui.set(is_sel and ui.c.accent or ui.c.text)
       love.graphics.setFont(ui.f.small)
-      love.graphics.printf(is_sel and ("<  " .. item.val .. "  >") or item.val, rx, y + 25 - ui.f.small:getHeight() / 2, rw, "center")
+      love.graphics.printf(is_sel and ("<  " .. item.val .. "  >") or item.val, rx, y + 24 - ui.f.small:getHeight() / 2, rw, "center")
     end
   end
 
   -- System info box at bottom
-  local info_y = list_y + #items * row_h + 4
+  local info_y = list_y + #items * row_h + 2
   ui.set(ui.c.panel)
-  love.graphics.rectangle("fill", card_x, info_y, card_w, 42, 6, 6)
+  love.graphics.rectangle("fill", card_x, info_y, card_w, 40, 6, 6)
   ui.set(ui.c.dim)
   love.graphics.setFont(ui.f.tiny)
-  love.graphics.print("R36S Media Hub v0.2  |  dArkOSRE / PortMaster  |  Biblioteca: " .. ui.fit(ui.f.tiny, app.root or "/", 320), card_x + 12, info_y + 21 - ui.f.tiny:getHeight() / 2)
+  love.graphics.print("R36S Media Hub v0.2  |  dArkOSRE / PortMaster  |  Biblioteca: " .. ui.fit(ui.f.tiny, app.root or "/", 320), card_x + 12, info_y + 20 - ui.f.tiny:getHeight() / 2)
 
   local acc = input.swap_ab and "B" or "A"
   local bck = input.swap_ab and "A" or "B"

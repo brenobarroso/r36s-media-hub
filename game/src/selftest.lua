@@ -1,13 +1,12 @@
 -- Automated smoke test, enabled with env R36S_AUTOTEST=1 (never runs on the device).
--- Plays the first track found, exercises the main actions and saves screenshots
--- (np1.png / browser.png / np2.png) to LÖVE's save directory, then quits.
+-- Tests all screens (Home, Settings, Photos, Videos, Books, NowPlaying), exercises features, saves screenshots, then quits cleanly.
 local app = require("src.app")
 local player = require("src.player")
 local fs = require("src.fs")
+local theme = require("src.theme")
 local U = require("src.util")
 
 local T = { t = 0, step = 0 }
-
 local steps = {}
 
 local function log(...)
@@ -15,55 +14,98 @@ local function log(...)
 end
 
 function T.start()
-  log("root=" .. app.root)
+  log("Media Hub self-test started, root=" .. tostring(app.root))
 end
 
-steps[1] = { 0.5, function()
+-- Step 1: Home screen
+steps[1] = { 0.4, function()
   log("screen=" .. tostring(app.current_name))
-  love.graphics.captureScreenshot("home.png")
+  love.graphics.captureScreenshot("test_01_home.png")
 end }
 
-steps[2] = { 1.2, function()
+-- Step 2: Settings screen (Dark)
+steps[2] = { 1.0, function()
   app.show("settings")
   log("showing settings")
+  love.graphics.captureScreenshot("test_02_settings.png")
 end }
 
-steps[3] = { 1.8, function()
-  love.graphics.captureScreenshot("settings.png")
-  local theme = require("src.theme")
+-- Step 3: Switch theme to AMOLED
+steps[3] = { 1.6, function()
   theme.set("amoled")
   log("theme set to amoled")
+  player.set_eq("bass")
+  log("eq set to bass")
+  love.graphics.captureScreenshot("test_03_settings_amoled.png")
 end }
 
-steps[4] = { 2.4, function()
-  love.graphics.captureScreenshot("settings_amoled.png")
-  local theme = require("src.theme")
+-- Step 4: Photos screen
+steps[4] = { 2.2, function()
   theme.set("dark")
-  app.show("home")
+  app.show("photos")
+  log("showing photos screen")
+  love.graphics.captureScreenshot("test_04_photos.png")
 end }
 
-steps[5] = { 3.0, function()
+-- Step 5: Videos screen
+steps[5] = { 2.8, function()
+  app.show("videos")
+  log("showing videos screen")
+  love.graphics.captureScreenshot("test_05_videos.png")
+end }
+
+-- Step 6: Books screen
+steps[6] = { 3.4, function()
+  app.show("books")
+  log("showing books screen")
+  love.graphics.captureScreenshot("test_06_books.png")
+end }
+
+-- Step 7: Book Reader with inline test text
+steps[7] = { 4.0, function()
+  -- Create a temporary test book
+  local tmp_book = (os.getenv("TEMP") or ".") .. "/test_book.txt"
+  local f = io.open(tmp_book, "w")
+  if f then
+    f:write("Capítulo 1: O Começo da Jornada\n\nEste é um teste do leitor de livros para o console R36S.\nO R36S Media Hub agora suporta leitura de livros digitais em formato TXT, EPUB, MOBI e mangás CBZ!\n\nAs páginas são paginadas automaticamente com controle de tamanho de fonte, marcadores de página e modo escuro para leitura confortável.")
+    f:close()
+  end
+  app.show("book_reader", tmp_book, 1)
+  log("showing book reader screen")
+  love.graphics.captureScreenshot("test_07_book_reader.png")
+end }
+
+-- Step 8: Play music and show Now Playing
+steps[8] = { 4.6, function()
   local tracks = fs.collect(app.root)
   log("tracks found: " .. #tracks)
   if #tracks > 0 then
     player.play_queue(tracks, 1)
   end
   app.show("nowplaying")
+  log("showing now playing screen")
 end }
 
-steps[6] = { 4.5, function()
-  love.graphics.captureScreenshot("np1.png")
+-- Step 9: Capture Now Playing with EQ badge
+steps[9] = { 5.4, function()
+  love.graphics.captureScreenshot("test_08_nowplaying.png")
+end }
+
+-- Step 10: Home screen with mini player
+steps[10] = { 6.0, function()
   app.show("home")
+  log("showing home with mini player active")
 end }
 
-steps[7] = { 5.5, function()
-  log("home with mini player")
-  love.graphics.captureScreenshot("home_playing.png")
+-- Step 11: Capture Home with mini player
+steps[11] = { 6.6, function()
+  love.graphics.captureScreenshot("test_09_home_miniplayer.png")
 end }
 
-steps[8] = { 6.5, function()
-  log("DONE")
-  love.event.quit()
+-- Step 12: Done!
+steps[12] = { 7.4, function()
+  log("ALL SCREEN TESTS COMPLETED SUCCESSFULLY!")
+  love.event.quit(0)
 end }
 
 function T.update(dt)

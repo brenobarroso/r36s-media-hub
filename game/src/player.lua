@@ -1,6 +1,7 @@
 -- Playback engine: queue, shuffle/repeat, volume, tags and cover art.
 local id3 = require("src.id3")
 local U = require("src.util")
+local eq = require("src.eq")
 
 local P = {
   queue = {},       -- array of file paths
@@ -124,6 +125,7 @@ function P.load_pos(pos)
       P.pos = pos
       P.error = nil
       P.source:setVolume(1)
+      eq.apply(P.source)
       P.source:play()
       P.status = "playing"
       P.started_at = P.clock or 0
@@ -249,6 +251,18 @@ local function on_track_end()
     if P.source then P.source:stop() end
     P.status = "stopped"
   end
+end
+
+function P.cycle_eq()
+  return eq.next(P.source)
+end
+
+function P.set_eq(preset_idx_or_id)
+  eq.set_preset(preset_idx_or_id, P.source)
+end
+
+function P.get_eq_name()
+  return eq.get_preset_name()
 end
 
 function P.update(dt)

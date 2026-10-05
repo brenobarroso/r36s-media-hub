@@ -60,6 +60,7 @@ local function save_state()
   st.theme = theme.current_name
   st.brightness = app.state.brightness or "80"
   st.screen_dimmer = app.state.screen_dimmer or "0"
+  st.eq = app.state.eq or (player.eq and player.eq.presets[player.eq.current].id) or "flat"
   state.save(st)
 end
 
@@ -123,11 +124,20 @@ function love.load()
   if st.repeat_mode == "all" or st.repeat_mode == "one" then player.repeat_mode = st.repeat_mode end
   input.swap_ab = (st.swap_ab == "1")
   input.on_action = on_action
+  if player.eq then
+    player.eq.init()
+    if st.eq then player.set_eq(st.eq) end
+  end
 
   app.screens.home = require("src.screens.home")
   app.screens.browser = require("src.screens.browser")
   app.screens.nowplaying = require("src.screens.nowplaying")
   app.screens.settings = require("src.screens.settings")
+  app.screens.photos = require("src.screens.photos")
+  app.screens.photo_viewer = require("src.screens.photo_viewer")
+  app.screens.videos = require("src.screens.videos")
+  app.screens.books = require("src.screens.books")
+  app.screens.book_reader = require("src.screens.book_reader")
 
   app.show("home")
 

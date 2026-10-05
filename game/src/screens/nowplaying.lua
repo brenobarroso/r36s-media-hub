@@ -86,9 +86,15 @@ function N.draw()
     love.graphics.print(label, x + 44, ry + 15 - ui.f.small:getHeight() / 2)
 
     ui.set(player.shuffle and ui.c.accent or ui.c.faint)
-    ui.icon_shuffle(x + 150, ry + 3, 26)
+    ui.icon_shuffle(x + 140, ry + 3, 26)
     ui.set(player.repeat_mode ~= "off" and ui.c.accent or ui.c.faint)
-    ui.icon_repeat(x + 196, ry + 3, 26, player.repeat_mode == "one")
+    ui.icon_repeat(x + 180, ry + 3, 26, player.repeat_mode == "one")
+
+    -- EQ preset tag
+    local eq_name = player.get_eq_name()
+    ui.set((player.eq and player.eq.current > 1) and ui.c.accent or ui.c.dim)
+    love.graphics.setFont(ui.f.tiny)
+    love.graphics.print("EQ: " .. eq_name, x + 218, ry + 15 - ui.f.tiny:getHeight() / 2)
 
     -- volume
     local vy = 266
