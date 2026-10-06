@@ -29,7 +29,7 @@
    - [6.2 Músicas, Equalizador & Visualizador Retrô WMP](#62-músicas-equalizador--visualizador-retrô-wmp)
    - [6.3 Galeria de Fotos & Visualizador](#63-galeria-de-fotos--visualizador)
    - [6.4 Vídeos, Filmes & Sistema de Playlists](#64-vídeos-filmes--sistema-de-playlists)
-   - [6.5 Livros Digitais & Leitor de Mangás](#65-livros-digitais--leitor-de-mangás)
+   - [6.5 Livros Digitais (PDF, EPUB, TXT)](#65-livros-digitais-pdf-epub-txt)
    - [6.6 Configurações do Sistema & Economia de Bateria](#66-configurações-do-sistema--economia-de-bateria)
 7. [Tabela de Controles e Atalhos Globais](#7-tabela-de-controles-e-atalhos-globais)
 8. [Resolução de Problemas (FAQ)](#8-resolução-de-problemas-faq)
@@ -100,6 +100,7 @@ O aplicativo roda como um **Port nativo** do PortMaster:
 Para reproduzir arquivos de vídeo modernos em alta definição (MP4, MKV, AVI H.264) no chip Rockchip RK3326:
 * O sistema operacional (dArkOS / ArkOS) já inclui por padrão o utilitário `/usr/bin/mpv` ou `/usr/bin/ffplay`.
 * O launcher invoca o player em modo KMS/DRM (`mpv --fs --vo=drm`), garantindo decodificação acelerada sem sobrecarregar a memória do LÖVE. Ao sair do vídeo, o Media Hub é retomado instantaneamente.
+* **Saída Instantânea sem Travamentos (`mpv_input.conf`):** O aplicativo injeta um arquivo de configuração de entrada dedicado que mapeia os botões **B**, **SELECT**, **ESC** e **q** diretamente para o comando de encerramento (`quit`), permitindo retornar ao menu a qualquer momento sem prender o usuário ou exigir reinicialização do console.
 * **Playlists:** Múltiplos arquivos selecionados na fila são passados em sequência direta para o `mpv`, que os toca sucessivamente sem fechar a tela.
 
 ### 3.3 Interface com Hardware (sysfs)
@@ -238,23 +239,31 @@ Caso suas mídias estejam em pastas com outros nomes ou em um disco externo:
     - Se a Playlist estiver vazia, toca todos os vídeos da pasta atual sequencialmente.
   - **Botão SELECT:** Limpa toda a fila de vídeos atual.
   - **Botão A:** Toca imediatamente o vídeo selecionado de forma individual.
+* **Saída Instantânea:** Pressione **B** ou **SELECT** a qualquer instante durante a reprodução para retornar imediatamente à lista.
+* **Dicas de Desempenho no RK3326:**
+  - Para reprodução suave sem engasgos, recomenda-se vídeos codificados em **H.264 (AVC)** com resolução de **640×480 (480p)** ou **1280×720 (720p)** e taxa de bits entre **1500 kbps e 2500 kbps**.
+  - Evite arquivos em 1080p pesados ou H.265/HEVC, pois demandam processamento pesado por software que excede a capacidade do processador portátil.
 * Ao reproduzir vídeos, o aplicativo pausa qualquer música de fundo ativa automaticamente.
 
 ---
 
-### 6.5 Livros Digitais & Leitor de Mangás
-* **Leitor de Texto (EPUB, MOBI, TXT, PDF):**
-  - Quebra e paginação inteligente de texto desenhada para leitura confortável em tela IPS de 3.5".
-  - **Y:** Alterna o tamanho da fonte entre *Normal* (18px) e *Grande* (22px).
-  - **X:** Alterna o esquema de cores:
-    - *Tema Padrão:* segue as cores da interface.
-    - *Sépia:* fundo creme com letras escuras (reduz a fadiga ocular em leituras longas).
-    - *AMOLED:* fundo preto absoluto com texto claro.
+### 6.5 Livros Digitais (PDF, EPUB, TXT)
+* **Foco em Qualidade e Legibilidade:**
+  - O leitor foi otimizado estritamente para **PDF**, **EPUB** e **TXT**, garantindo carregamento rápido, consumo mínimo de memória e paginação uniforme.
+* **Mecanismo de Extração de PDF:**
+  - **Compensação Inteligente de Kerning:** Resolve o problema comum de espaços indevidos inseridos entre letras (ex: `Barr oso` &rarr; `Barroso`).
+  - **Correção Completa de Acentuação:** Converte páginas de código ISO-8859-1 e Windows-1252 para UTF-8 genuíno, preservando acentos em português (`ç`, `ã`, `õ`, `é`, `í`, `ó`).
+  - **Ligaduras Tipográficas TeX/PDF:** Reconhece e decodifica caracteres ligados (`fi`, `fl`, `ff`).
+* **Controles no Leitor:**
+  - **D-Pad Esquerda / Direita ou L1 / R1:** Página anterior / próxima.
   - **L2 / R2:** Salta 10 páginas para trás ou para frente.
-* **Leitor de Mangás e Quadrinhos (CBZ):**
-  - Descompactação e montagem de imagens transparentes.
-  - Suporte total a **Zoom (2x/3x)** e movimentação pelo direcional para facilitar a leitura de pequenos balões de diálogo.
-* **Marcador de Página Automático:** Cada livro ou mangá salva sua página atual em `bookmarks.txt`. Ao reabrir o livro, você volta imediatamente para a página onde parou.
+  - **Y:** Alterna o tamanho da fonte entre *Normal* (18px) e *Grande* (22px).
+  - **X:** Alterna o esquema visual de leitura:
+    - *Tema Padrão:* segue as cores da interface.
+    - *Sépia:* fundo creme suave que reduz a fadiga ocular em leituras prolongadas.
+    - *AMOLED:* fundo preto absoluto (`#000000`) com texto claro, ideal para leitura noturna com economia máxima de bateria.
+  - **B:** Retorna à lista de livros.
+* **Marcador de Página Automático:** Cada documento salva sua posição em `bookmarks.txt`. Ao reabrir o arquivo, você volta imediatamente para a página onde parou.
 
 ---
 
@@ -283,13 +292,23 @@ Pressione **SELECT** na Home para acessar as opções:
 | **SELECT + X** | Inverte rapidamente os botões **A / B** | Alterna entre padrão Nintendo e Xbox |
 | **SELECT + Y** | Exibe HUD de depuração técnica | Mostra inputs, joystick ID e caminhos em tempo real |
 | **START** | Play / Pause da música de fundo (na Home) | Na tela de Vídeos: toca a Playlist inteira / tudo |
-| **X** | Abre Now Playing (na Home se tocando) | Na tela de Vídeos: adiciona/remove da Playlist |
-| **L1 / R1** | Faixa anterior / próxima (na Home / Música) | Pula 6 itens ou páginas em listas / leitor |
-| **L2 / R2** | Volume geral − / + | Zoom em imagens, leitor de fotos e mangás CBZ |
+| **X** | Abre Now Playing (na Home se tocando) | Na tela de Vídeos: adiciona/remove da Playlist / Em Livros: alterna tema de cor |
+| **Y** | Abre Configurações (na Home) | Em Fotos: rotação 90° / Em Livros: alterna tamanho da fonte |
+| **L1 / R1** | Faixa anterior / próxima (na Home / Música) | Pula 6 itens em listas / 1 página no leitor |
+| **L2 / R2** | Volume geral − / + | Zoom contínuo em fotos / Salta 10 páginas no leitor |
+| **B / SELECT** | Retornar ao menu anterior | **Durante vídeo:** Encerra a reprodução e volta à lista |
 
 ---
 
 ## 8. Resolução de Problemas (FAQ)
+
+### Como sair de um vídeo durante a reprodução?
+* Pressione **B** ou **SELECT** no console. O player de vídeo (`mpv`) foi configurado para encerrar imediatamente e devolver o controle ao Media Hub sem necessidade de reiniciar o console.
+
+### Vídeos ou Fotos demoram para abrir ou engasgam
+* **Limitações do hardware (RK3326):** O processador do R36S possui 4 núcleos Cortex-A35 e 1 GB de RAM.
+  - **Para vídeos:** Use arquivos em resolução **480p** ou **720p** codificados em **H.264 (AVC)** com bitrate até 2500 kbps. Evite vídeos em 1080p, 4K ou H.265.
+  - **Para fotos:** Fotos de 20+ megapixels tiradas em smartphones modernos exigem dezenas de megabytes para descompactar na RAM. Redimensione suas imagens para **1080p** ou **640×480** antes de colocar no cartão SD para carregamento instantâneo.
 
 ### O app não aparece na lista de Ports do console
 * Certifique-se de que o arquivo `R36S Media Hub.sh` está diretamente dentro da pasta `ports` do seu cartão SD (e não dentro de uma subpasta).

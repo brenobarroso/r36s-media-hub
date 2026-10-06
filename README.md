@@ -5,17 +5,17 @@
 [![Engine: LÖVE 11.5](https://img.shields.io/badge/Engine-L%C3%96VE%2011.5-pink.svg)](https://love2d.org)
 [![PortMaster](https://img.shields.io/badge/Runtime-PortMaster-brightgreen.svg)](https://portmaster.games)
 
-Central Multimídia moderna, fluida e completa desenvolvida sob medida para consoles portáteis **R36S**, **R35S**, **Powkiddy**, **Anbernic** e dispositivos baseados nos chips **Rockchip RK3326**, **RK3566** e **Allwinner H700** rodando **dArkOSRE / ArkOS / AmberELEC / JELOS / ROCKNIX / muOS** via **PortMaster**.
+Central Multimídia moderna, fluida e completa desenvolvida sob medida para consoles portáteis **R36S**, **R35S**, **Powkiddy**, **Anbernic** e dispositivos baseados nos chips **Rockchip RK3326**, **RK3566** e **Allwinner H700** rodando **dArkOS / ArkOS / AmberELEC / JELOS / ROCKNIX / muOS** via **PortMaster**.
 
-Transforme seu videogame portátil retrô em um reprodutor de músicas com equalizador e visualizador retrô, reprodutor de vídeos com playlists, galeria de fotos em tela cheia e leitor de livros digitais e mangás com salvamento automático de progresso.
+Transforme seu videogame portátil retrô em um reprodutor de músicas com equalizador e visualizador espectral retrô, reprodutor de vídeos com fila de playlists acelerado por hardware, galeria de fotos em tela cheia e leitor de livros digitais (PDF, EPUB, TXT) com formatação limpa e salvamento automático de progresso.
 
 ---
 
 ## 🌟 Funcionalidades Principais
 
 * **🏠 Home Screen Intuitiva:**
-  * Navegação suave por cards 2×2 (*Músicas*, *Vídeos*, *Fotos*, *Livros*).
-  * Barra superior integrada com relógio em tempo real e leitura de bateria via *sysfs* (porcentagem e indicador de carregamento).
+  * Navegação rápida por cards 2×2 (*Músicas*, *Vídeos*, *Fotos*, *Livros*).
+  * Barra superior integrada com relógio em tempo real e leitura de bateria via *sysfs* (porcentagem e indicador de carregamento com memoização de baixo consumo).
   * **Mini-Player integrado:** exibe a música ativa no rodapé ao navegar pelo menu, com controle rápido de reprodução (`START`).
 
 * **🎵 Músicas, Equalizador & Visualizador Retrô WMP:**
@@ -29,19 +29,24 @@ Transforme seu videogame portátil retrô em um reprodutor de músicas com equal
   * Suporte aos principais formatos de vídeo: `.mp4`, `.mkv`, `.avi`, `.mov`, `.wmv`, `.webm`, `.ogv`, `.3gp`.
   * Detecção de cartazes e pôsteres acompanhantes (`filme.jpg` ou `poster.jpg`).
   * **Sistema de Playlists / Fila:** selecione múltiplos vídeos com o botão `X` e aperte `START` para reprodução contínua sem interrupções.
-  * Reprodução acelerada por hardware via `mpv` (KMS/DRM) / `ffplay`, pausando e retomando a interface sem engasgos.
+  * Reprodução acelerada por hardware via `mpv` (KMS/DRM) / `ffplay`.
+  * **Saída Instantânea sem Travamentos:** mapeamento dedicado via `mpv_input.conf` que permite sair a qualquer momento pressionando `B`, `SELECT`, `ESC` ou `q`.
 
 * **🖼️ Galeria de Fotos & Visualizador Fullscreen:**
-  * Navegação por pastas com grade de miniaturas 4×3 e cache de redimensionamento eficiente para economizar RAM.
+  * Navegação por pastas com grade de miniaturas 4×3 e cache inteligente de redimensionamento.
   * Visualizador em tela cheia com **Zoom contínuo (até 3.5x)** e navegação panorâmica (*pan* com direcional).
   * **Rotação de 90°** com um botão (para fotos verticais).
   * **Modo Slideshow automático** com transição temporizada.
 
-* **📖 Leitor de Livros Digitais & Mangás:**
-  * Suporte nativo a **EPUB**, **MOBI / AZW** (Kindle descomprimido nativamente em PalmDOC), **TXT**, **PDF** e quadrinhos/mangás **CBZ**.
-  * Quebra inteligente de texto em páginas, alternância de tamanho de fonte (*Normal* e *Grande*) e paletas de cor para leitura (*Padrão*, *Sépia para descanso visual* e *Preto AMOLED*).
-  * Leitor de mangás com zoom e movimentação panorâmica para leitura de balões de texto pequenos.
-  * **Marcador de Página automático (`bookmarks.txt`):** memoriza a última página lida de cada livro para continuar exatamente de onde parou.
+* **📖 Leitor de Livros Digitais (PDF, EPUB, TXT):**
+  * Foco e precisão máxima nos três formatos fundamentais de leitura: **PDF**, **EPUB** e **TXT**.
+  * **Extrator de PDF Otimizado:**
+    * Tratamento de kerning inteligente (elimina palavras divididas com espaços indevidos).
+    * Decodificação de códigos octais e conversão completa de páginas de código ISO-8859-1/Windows-1252 para UTF-8 genuíno (acentuação em português 100% perfeita: `ç`, `ã`, `õ`, `é`, etc.).
+    * Suporte a ligaduras tipográficas TeX/PDF (`fi`, `fl`, `ff`).
+  * Quebra inteligente de texto em páginas, alternância de tamanho de fonte (*Normal* e *Grande*) via botão `Y`.
+  * Paletas de cor para leitura (*Padrão*, *Sépia para descanso visual* e *Preto AMOLED puro*) via botão `X`.
+  * **Marcador de Página automático (`bookmarks.txt`):** memoriza a última página lida de cada livro para continuar de onde parou.
 
 * **⚙️ Configurações & Seletor de Pastas:**
   * **Seletor Interativo de Diretórios:** defina a pasta exata da sua biblioteca de músicas, fotos, vídeos e livros navegando pelo sistema ou alternando entre `/roms` (SD1) e `/roms2` (SD2).
@@ -52,21 +57,41 @@ Transforme seu videogame portátil retrô em um reprodutor de músicas com equal
 
 ---
 
+## 💡 Dicas de Otimização para o Hardware do R36S (RK3326)
+
+O console R36S utiliza o processador Rockchip RK3326 (Quad-Core Cortex-A35 @ 1.3-1.5 GHz) com 1 GB de RAM. Para obter a melhor experiência possível:
+
+### 🎬 Vídeos e Filmes
+* **Resolução recomendada:** **640×480 (480p)** ou **1280×720 (720p)** em codec **H.264 (AVC)**.
+* **Taxa de bits (Bitrate):** Entre **1500 kbps e 2500 kbps** com áudio Stereo AAC/MP3.
+* **Dica:** Arquivos pesados em 1080p, 4K ou codificados em H.265/HEVC/10-bit exigem decodificação pesada por software que sobrecarrega a CPU do RK3326. Ao converter vídeos no Handbrake ou ffmpeg, use o preset *Fast 480p30* ou *Fast 720p30*.
+* **Para sair do vídeo:** Pressione **B** ou **SELECT** a qualquer instante para retornar imediatamente à lista.
+
+### 🖼️ Fotos e Imagens
+* **Resolução recomendada:** Imagens redimensionadas para **1080p** (1920×1080) ou **640×480**.
+* **Dica:** Fotos tiradas diretamente de smartphones modernos (24 MP a 48 MP com 4000×6000 pixels) pesam dezenas de megabytes na memória descompactada (RGBA) do LÖVE, o que causa lentidão ao carregar. Imagens otimizadas abrem de forma instantânea.
+
+### 🎵 Músicas e 📖 Livros
+* Operam com **desempenho 100% fluido e consumo mínimo de bateria**, mesmo com o equalizador sonoro ou PDFs densos ativos.
+
+---
+
 ## 🎮 Controles Rápidos
 
 | Botão / Atalho | Ação Principal |
 |---|---|
 | **D-Pad** | Navegação em listas, menus, fotos e texto |
 | **A** *(ou B no layout Xbox)* | Abrir pasta / Tocar faixa / Confirmar |
-| **B** *(ou A no layout Xbox)* | Voltar de pasta / Retornar ao menu anterior |
-| **X** | Alternar Playlist de vídeo (em Vídeos) ou ir para Now Playing (na Home) |
+| **B** *(ou A no layout Xbox)* | Voltar de pasta / Retornar ao menu anterior / Sair de vídeo |
+| **X** | Alternar Playlist de vídeo (em Vídeos) ou alternar tema no leitor de livros |
+| **Y** | Alternar tamanho de fonte (em Livros) ou rotação 90° (em Fotos) |
 | **START** | Tocar Playlist (em Vídeos) ou Play/Pause de música (na Home) |
 | **SELECT** *(na Home)* | Abre o menu de Configurações |
 | **SELECT + START** | **Sair imediatamente do Media Hub** (retorna ao EmulationStation) |
 | **SELECT + X** | Alternar inversão de botões A/B |
 | **SELECT + Y** | Ativar HUD de depuração |
 | **L1 / R1** | Faixa anterior / próxima (ou saltar páginas/itens) |
-| **L2 / R2** | Volume geral − / + (ou zoom em fotos/mangás) |
+| **L2 / R2** | Volume geral − / + (ou zoom em fotos / saltar 10 páginas em livros) |
 
 ---
 
@@ -75,8 +100,8 @@ Transforme seu videogame portátil retrô em um reprodutor de músicas com equal
 Ao inicializar, o aplicativo procura mídias automaticamente nas seguintes pastas (no Cartão 1 `/roms` ou Cartão 2 `/roms2`):
 * `music/` &rarr; Suas faixas e álbuns musicais. *(Também lê `/roms2/ports/gmu-music-player/music` automaticamente).*
 * `photos/` &rarr; Fotos e imagens organizadas por pastas ou na raiz.
-* `videos/` &rarr; Filmes, séries e vídeos.
-* `books/` &rarr; E-books (EPUB, MOBI, TXT, PDF) e mangás (CBZ).
+* `videos/` &rarr; Filmes, séries e clipes.
+* `books/` &rarr; Livros e textos (PDF, EPUB, TXT).
 
 *(Você também pode alterar e apontar qualquer diretório personalizado nas **Configurações** usando o Seletor de Pastas).*
 
@@ -88,13 +113,13 @@ Ao inicializar, o aplicativo procura mídias automaticamente nas seguintes pasta
    ```powershell
    powershell -ExecutionPolicy Bypass -File tools\package.ps1
    ```
-2. Ou envie diretamente para o cartão SD conectado no PC:
+2. Ou envie diretamente para o cartão SD conectado no PC (substitua `E:` pela letra do seu cartão):
    ```powershell
    powershell -ExecutionPolicy Bypass -File tools\deploy_to_sd.ps1 -Drive E:
    ```
-3. No console, acerte a lista e execute: **Ports** &rarr; **R36S Media Hub**.
+3. No console, acesse: **Ports** &rarr; **R36S Media Hub**.
 
-> 📖 **Para instruções detalhadas de instalação, compatibilidade com outros consoles e firmwares, consulte o [Manual Completo de Uso (MANUAL.md)](MANUAL.md).**
+> 📖 **Para instruções detalhadas de instalação, dependências do PortMaster e compatibilidade com outros consoles, consulte o [Manual Completo de Uso (MANUAL.md)](MANUAL.md).**
 
 ---
 
@@ -106,7 +131,7 @@ O projeto pode ser executado diretamente no Windows ou Linux usando o LÖVE 11.5
 # Executar a interface no PC:
 lovec game
 
-# Executar a suíte completa de smoke-tests com captura de telas:
+# Executar a suíte completa de testes automatizados com captura de telas:
 powershell -ExecutionPolicy Bypass -File tools\selftest.ps1 -Love <caminho_lovec.exe> -Music <pasta_musicas>
 ```
 
