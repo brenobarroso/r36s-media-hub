@@ -1,4 +1,4 @@
--- E-Book & Manga Library: list view with format badges, progress and bookmarks.
+-- E-Book Reader: PDF, EPUB and TXT list view with format badges, progress and bookmarks.
 local app = require("src.app")
 local ui = require("src.ui")
 local fs = require("src.fs")
@@ -14,8 +14,7 @@ local B = {
 }
 
 local BOOK_EXT = {
-  epub = true, mobi = true, azw = true, prc = true,
-  txt = true, cbz = true, pdf = true, md = true,
+  pdf = true, epub = true, txt = true,
 }
 
 local function find_book_root()
@@ -128,7 +127,7 @@ function B.draw()
   ui.icon_book(18, 10, 24)
   ui.set(ui.c.text)
   love.graphics.setFont(ui.f.head)
-  local title = (B.dir == find_book_root()) and "Biblioteca de Livros & Mangás" or U.basename(B.dir)
+  local title = (B.dir == find_book_root()) and "Biblioteca de Livros (PDF, EPUB, TXT)" or U.basename(B.dir)
   love.graphics.print(ui.fit(ui.f.head, title, ui.W - 180), 52, 22 - ui.f.head:getHeight() / 2)
 
   ui.set(ui.c.dim)
@@ -139,7 +138,7 @@ function B.draw()
   if #B.entries == 0 then
     ui.set(ui.c.dim)
     love.graphics.setFont(ui.f.body)
-    love.graphics.printf("Nenhum livro ou manga encontrado.\nPasta: " .. (B.dir or "não definida"), 0, 200, ui.W, "center")
+    love.graphics.printf("Nenhum livro (PDF, EPUB, TXT) encontrado.\nPasta: " .. (B.dir or "não definida"), 0, 200, ui.W, "center")
   end
 
   -- Book List

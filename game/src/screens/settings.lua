@@ -61,6 +61,12 @@ local function get_dim_index(val)
 end
 
 function S.enter()
+  S.media_dirs = {
+    music = fs.find_media_root("music"),
+    photos = fs.find_media_root("photos"),
+    videos = fs.find_media_root("videos"),
+    books = fs.find_media_root("books"),
+  }
 end
 
 function S.action(a)
@@ -193,25 +199,25 @@ function S.draw()
     {
       title = "Pasta de Músicas",
       desc = "Definir diretório da biblioteca musical",
-      val = fs.find_media_root("music"),
+      val = (S.media_dirs and S.media_dirs.music) or fs.find_media_root("music"),
       type = "folder",
     },
     {
       title = "Pasta de Fotos",
       desc = "Definir diretório da galeria de fotos",
-      val = fs.find_media_root("photos"),
+      val = (S.media_dirs and S.media_dirs.photos) or fs.find_media_root("photos"),
       type = "folder",
     },
     {
       title = "Pasta de Vídeos",
       desc = "Definir diretório de filmes e clipes",
-      val = fs.find_media_root("videos"),
+      val = (S.media_dirs and S.media_dirs.videos) or fs.find_media_root("videos"),
       type = "folder",
     },
     {
-      title = "Pasta de Livros & Mangás",
-      desc = "Definir diretório de EPUB, MOBI, TXT e CBZ",
-      val = fs.find_media_root("books"),
+      title = "Pasta de Livros",
+      desc = "Definir diretório de PDF, EPUB e TXT",
+      val = (S.media_dirs and S.media_dirs.books) or fs.find_media_root("books"),
       type = "folder",
     },
   }

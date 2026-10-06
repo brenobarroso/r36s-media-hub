@@ -57,9 +57,7 @@ if (-not (Test-Path $readmeVideos)) {
 }
 
 $readmeBooks = Join-Path $Drive "books\COLOQUE_LIVROS_AQUI.txt"
-if (-not (Test-Path $readmeBooks)) {
-  Set-Content -Path $readmeBooks -Value "Coloque seus livros, artigos e mangas nesta pasta.`r`nFormatos suportados: EPUB, MOBI (Kindle), TXT, CBZ (mangas/quadrinhos) e PDF.`r`nO leitor salva seu progresso e a ultima pagina lida automaticamente." -Encoding UTF8
-}
+Set-Content -Path $readmeBooks -Value "Coloque seus livros, artigos e textos nesta pasta.`r`nFormatos suportados: PDF, EPUB e TXT.`r`nO leitor salva seu progresso e a ultima pagina lida automaticamente." -Encoding UTF8
 
 # Remove old launcher script if present
 $oldSh = Join-Path $dest "R36S Music Player.sh"

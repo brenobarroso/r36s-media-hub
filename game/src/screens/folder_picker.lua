@@ -18,7 +18,7 @@ local LABELS = {
   music = "Músicas",
   photos = "Fotos",
   videos = "Vídeos",
-  books = "Livros & Mangás",
+  books = "Livros (PDF, EPUB, TXT)",
 }
 
 local function scan_dirs(path)
@@ -80,6 +80,8 @@ local function select_current_folder()
   elseif FP.kind == "books" and app.screens.books then
     app.screens.books.dir = nil
   end
+
+  if fs.clear_cache then fs.clear_cache() end
 
   ui.toast("Pasta de " .. (LABELS[FP.kind] or "Mídia") .. " definida!", 1.5)
   app.show("settings")

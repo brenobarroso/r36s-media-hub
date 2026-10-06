@@ -1,4 +1,4 @@
--- E-Reader & Manga Viewer: text pagination, font size toggle, CBZ comic reader & bookmarks.
+-- E-Reader: Clean text pagination for PDF, EPUB and TXT with font size toggle, themes and bookmarks.
 local app = require("src.app")
 local ui = require("src.ui")
 local input = require("src.input")
@@ -9,68 +9,29 @@ local U = require("src.util")
 local R = {
   path = nil,
   title = "",
-  mode = "text",     -- "text" or "cbz"
-  pages = {},        -- array of page strings (text mode) or file paths (cbz mode)
+  pages = {},
   current_page = 1,
   total_pages = 1,
-  font_size = "normal", -- "normal" (18px) or "large" (22px)
+  font_size = "normal",   -- "normal" (18px) or "large" (22px)
   color_style = "default", -- "default", "sepia", "amoled"
-  loading = false,
   error_msg = nil,
-
-  -- CBZ / Image state
-  cbz_mount = nil,
-  current_img = nil,
-  scale = 1.0,
-  base_scale = 1.0,
-  offset_x = 0,
-  offset_y = 0,
+  text_content = nil,
 }
 
-local function release_cbz_image()
-  if R.current_img then
-    R.current_img:release()
-    R.current_img = nil
-  end
-end
-
-local function load_cbz_page()
-  release_cbz_image()
-  local fpath = R.pages[R.current_page]
-  if not fpath then return end
-
-  local data = love.filesystem.read(fpath)
-  if not data or #data == 0 then return end
-
-  local ok, img = pcall(function()
-    local fd = love.filesystem.newFileData(data, U.basename(fpath))
-    local imd = love.image.newImageData(fd)
-    local i = love.graphics.newImage(imd)
-    i:setFilter("linear", "linear")
-    return i
-  end)
-
-  if ok and img then
-    R.current_img = img
-    local w, h = img:getDimensions()
-    -- Fit screen with top and bottom margins
-    local max_w = ui.W - 8
-    local max_h = ui.H - 56
-    R.base_scale = math.min(max_w / w, max_h / h)
-    R.scale = 1.0
-    R.offset_x = 0
-    R.offset_y = 0
-  end
-end
-
 local function repaginate_text(content)
+  if not content or content == "" then
+    R.pages = { "Documento vazio." }
+    R.total_pages = 1
+    R.current_page = 1
+    return
+  end
   local font = (R.font_size == "large") and ui.f.head or ui.f.body
   local line_h = (R.font_size == "large") and 30 or 25
   local max_w = ui.W - 48
   local max_h = ui.H - 96 -- space for header and footer
 
   R.pages = parser.paginate_text(content, font, max_w, max_h, line_h)
-  R.total_pages = #R.pages
+  R.total_pages = math.max(1, #R.pages)
   R.current_page = math.max(1, math.min(R.current_page, R.total_pages))
 end
 
@@ -81,7 +42,7 @@ function R.enter(book_path, start_page)
   R.error_msg = nil
   R.pages = {}
   R.total_pages = 1
-  release_cbz_image()
+  R.text_content = nil
 
   local res, err = parser.load_book(book_path)
   if not res then
@@ -89,27 +50,17 @@ function R.enter(book_path, start_page)
     return
   end
 
-  if res.type == "cbz" then
-    R.mode = "cbz"
-    R.cbz_mount = res.mount
-    R.pages = res.pages
-    R.total_pages = #R.pages
-    R.current_page = math.max(1, math.min(R.current_page, R.total_pages))
-    load_cbz_page()
-  else
-    R.mode = "text"
-    R.text_content = res.content
-    repaginate_text(res.content)
+  R.text_content = res.content or ""
+  repaginate_text(R.text_content)
+
+  if start_page and start_page > 1 then
+    R.current_page = math.max(1, math.min(start_page, R.total_pages))
   end
 
   bookmarks.set(R.path, R.current_page, R.total_pages)
 end
 
 function R.exit()
-  release_cbz_image()
-  if R.mode == "cbz" and R.path then
-    pcall(love.filesystem.unmount, R.path)
-  end
   if R.path and R.total_pages > 0 then
     bookmarks.set(R.path, R.current_page, R.total_pages)
   end
@@ -119,9 +70,6 @@ local function turn_page(delta)
   local new_page = math.max(1, math.min(R.total_pages, R.current_page + delta))
   if new_page ~= R.current_page then
     R.current_page = new_page
-    if R.mode == "cbz" then
-      load_cbz_page()
-    end
     bookmarks.set(R.path, R.current_page, R.total_pages)
   end
 end
@@ -141,14 +89,6 @@ function R.action(a)
     return
   end
 
-  -- Manga / CBZ pan controls when zoomed
-  if R.mode == "cbz" and R.scale > 1.05 then
-    if a == "left" then R.offset_x = R.offset_x + 40 return end
-    if a == "right" then R.offset_x = R.offset_x - 40 return end
-    if a == "up" then R.offset_y = R.offset_y + 40 return end
-    if a == "down" then R.offset_y = R.offset_y - 40 return end
-  end
-
   if a == "right" or a == "r1" then
     turn_page(1)
   elseif a == "left" or a == "l1" then
@@ -161,31 +101,14 @@ function R.action(a)
     ui.toast(string.format("Página %d / %d", R.current_page, R.total_pages), 0.8)
   elseif a == "up" then
     turn_page(-1)
-  elseif a == "down" then
+  elseif a == "down" or a == "accept" then
     turn_page(1)
-  elseif a == "accept" then
-    if R.mode == "cbz" then
-      if R.scale > 1.05 then
-        R.scale = 1.0
-        R.offset_x, R.offset_y = 0, 0
-      else
-        R.scale = 2.0
-      end
-    else
-      turn_page(1)
-    end
   elseif a == "y" then
-    if R.mode == "text" then
-      -- Toggle font size
-      R.font_size = (R.font_size == "normal") and "large" or "normal"
-      if R.text_content then
-        repaginate_text(R.text_content)
-        ui.toast(R.font_size == "large" and "Fonte: Grande" or "Fonte: Normal", 1.0)
-      end
-    else
-      -- CBZ zoom toggle
-      R.scale = (R.scale > 1.05) and 1.0 or 2.0
-      R.offset_x, R.offset_y = 0, 0
+    -- Toggle font size
+    R.font_size = (R.font_size == "normal") and "large" or "normal"
+    if R.text_content then
+      repaginate_text(R.text_content)
+      ui.toast(R.font_size == "large" and "Fonte: Grande" or "Fonte: Normal", 1.0)
     end
   elseif a == "x" then
     -- Toggle reader color scheme
@@ -258,30 +181,12 @@ function R.draw()
   ui.set(dim_color)
   love.graphics.printf(prog_str, ui.W - 180, 18 - ui.f.small:getHeight() / 2, 164, "right")
 
-  -- Content Area
-  if R.mode == "cbz" then
-    -- CBZ Image Rendering
-    if R.current_img then
-      local iw, ih = R.current_img:getDimensions()
-      local s = R.base_scale * R.scale
-      local cx = ui.W / 2 + R.offset_x
-      local cy = (ui.H - 42) / 2 + 18 + R.offset_y
-
-      love.graphics.setColor(1, 1, 1, 1)
-      love.graphics.draw(R.current_img, cx, cy, 0, s, s, iw / 2, ih / 2)
-    else
-      ui.set(dim_color)
-      love.graphics.setFont(ui.f.body)
-      love.graphics.printf("Carregando página do mangá...", 0, 220, ui.W, "center")
-    end
-  else
-    -- Text Rendering
-    local font = (R.font_size == "large") and ui.f.head or ui.f.body
-    love.graphics.setFont(font)
-    ui.set(text_color)
-    local page_str = R.pages[R.current_page] or ""
-    love.graphics.printf(page_str, 24, 46, ui.W - 48, "left")
-  end
+  -- Text Rendering
+  local font = (R.font_size == "large") and ui.f.head or ui.f.body
+  love.graphics.setFont(font)
+  ui.set(text_color)
+  local page_str = R.pages[R.current_page] or ""
+  love.graphics.printf(page_str, 24, 46, ui.W - 48, "left")
 
   -- Reading Progress Bar at Bottom
   local frac = R.total_pages > 0 and (R.current_page / R.total_pages) or 0
@@ -289,11 +194,10 @@ function R.draw()
 
   -- Footer Hints
   local bck = input.swap_ab and "A" or "B"
-  local mode_hint = (R.mode == "text") and { "Y", "Fonte" } or { "Y", "Zoom" }
   ui.hints({
     { "< / >", "Página" },
     { "L2/R2", "+/-10" },
-    mode_hint,
+    { "Y", "Fonte" },
     { "X", "Visual" },
     { bck, "Biblioteca" },
   }, 450)

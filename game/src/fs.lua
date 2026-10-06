@@ -22,23 +22,41 @@ local function popen_lines(cmd)
   return out
 end
 
+local dir_exists_cache = {}
+local dir_has_entries_cache = {}
+local media_root_cache = {}
+
+function M.clear_cache()
+  dir_exists_cache = {}
+  dir_has_entries_cache = {}
+  media_root_cache = {}
+end
+
 local function winpath(p)
   return (p:gsub("/", "\\"))
 end
 
 function M.dir_exists(p)
   if not p or p == "" then return false end
+  if dir_exists_cache[p] ~= nil then
+    return dir_exists_cache[p]
+  end
   local cmd
   if U.is_windows() then
     cmd = 'chcp 65001>nul & if exist "' .. winpath(p) .. '\\" echo y'
   else
     cmd = "[ -d " .. U.sh_quote(p) .. " ] && echo y"
   end
-  return popen_lines(cmd)[1] == "y"
+  local res = (popen_lines(cmd)[1] == "y")
+  dir_exists_cache[p] = res
+  return res
 end
 
 function M.dir_has_entries(p)
   if not p or p == "" then return false end
+  if dir_has_entries_cache[p] ~= nil then
+    return dir_has_entries_cache[p]
+  end
   local cmd
   if U.is_windows() then
     local wd = winpath(p)
@@ -47,12 +65,15 @@ function M.dir_has_entries(p)
     cmd = "ls -1A -- " .. U.sh_quote(p) .. " 2>/dev/null | head -n 1"
   end
   local lines = popen_lines(cmd)
+  local has = false
   for _, l in ipairs(lines) do
     if l and l:gsub("%s+", "") ~= "" then
-      return true
+      has = true
+      break
     end
   end
-  return false
+  dir_has_entries_cache[p] = has
+  return has
 end
 
 local function raw_list(dir)
@@ -182,6 +203,17 @@ function M.find_media_root(kind)
     end
   end
 
+  if kind and media_root_cache[kind] and M.dir_exists(media_root_cache[kind]) then
+    return media_root_cache[kind]
+  end
+
+  local function found(p)
+    if kind and p then
+      media_root_cache[kind] = p
+    end
+    return p
+  end
+
   if U.is_windows() then
     local win_candidates = {
       music = { os.getenv("R36S_MUSIC_DIR"), (os.getenv("USERPROFILE") or "C:") .. "/Music", "C:/Users/barro/.gemini/antigravity/scratch/testmusic", "C:/" },
@@ -192,9 +224,9 @@ function M.find_media_root(kind)
     local list = win_candidates[kind] or {}
     for _, c in ipairs(list) do
       local r = try(c)
-      if r then return r end
+      if r then return found(r) end
     end
-    return "C:/"
+    return found("C:/")
   end
 
   -- Linux / ArkOS / PortMaster:
@@ -263,32 +295,32 @@ function M.find_media_root(kind)
   -- PASS 1: Candidate on PRIMARY SD that has files/entries
   for _, c in ipairs(candidates) do
     if c:sub(1, #primary) == primary and M.dir_exists(c) and M.dir_has_entries(c) then
-      return c
+      return found(c)
     end
   end
 
   -- PASS 2: Candidate on SECONDARY SD that has files/entries
   for _, c in ipairs(candidates) do
     if c:sub(1, #secondary) == secondary and M.dir_exists(c) and M.dir_has_entries(c) then
-      return c
+      return found(c)
     end
   end
 
   -- PASS 3: First candidate on PRIMARY SD that exists (even if empty)
   for _, c in ipairs(candidates) do
     if c:sub(1, #primary) == primary and M.dir_exists(c) then
-      return c
+      return found(c)
     end
   end
 
   -- PASS 4: First candidate on SECONDARY SD that exists
   for _, c in ipairs(candidates) do
     if M.dir_exists(c) then
-      return c
+      return found(c)
     end
   end
 
-  return primary
+  return found(primary)
 end
 
 function M.find_music_root()

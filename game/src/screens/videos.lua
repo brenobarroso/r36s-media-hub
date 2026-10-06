@@ -141,9 +141,9 @@ local function play_videos(paths)
 
   local count = #paths
   if count == 1 then
-    ui.toast("Iniciando vídeo...", 2.0)
+    ui.toast("Iniciando vídeo (B ou SELECT para sair)...", 2.5)
   else
-    ui.toast(string.format("Iniciando playlist (%d vídeos)...", count), 2.0)
+    ui.toast(string.format("Iniciando playlist (%d vídeos - B para sair)...", count), 2.5)
   end
 
   if U.is_windows() then
@@ -152,13 +152,64 @@ local function play_videos(paths)
       os.execute(string.format('start "" %q', p))
     end
   else
-    -- On Linux / ArkOS / PortMaster: launch mpv with all files sequentially
+    -- On Linux / ArkOS / PortMaster: write input config so B, SELECT, ESC or q quit mpv immediately
+    local input_conf = "/tmp/mpv_input.conf"
+    local cf = io.open(input_conf, "w")
+    if cf then
+      cf:write([[
+q quit
+ESC quit
+b quit
+tab quit
+BS quit
+DEL quit
+SPACE cycle pause
+ENTER cycle pause
+LEFT seek -10
+RIGHT seek 10
+UP seek 60
+DOWN seek -60
+e playlist-next
+< playlist-prev
+> playlist-next
+a add volume 5
+d add volume -5
++ add volume 5
+- add volume -5
+m cycle mute
+GAMEPAD_B quit
+GAMEPAD_BACK quit
+GAMEPAD_START cycle pause
+GAMEPAD_A cycle pause
+GAMEPAD_DPAD_LEFT seek -10
+GAMEPAD_DPAD_RIGHT seek 10
+GAMEPAD_DPAD_UP seek 60
+GAMEPAD_DPAD_DOWN seek -60
+GAMEPAD_LEFT_SHOULDER playlist-prev
+GAMEPAD_RIGHT_SHOULDER playlist-next
+JOY_BTN_0 cycle pause
+JOY_BTN_1 quit
+JOY_BTN_2 quit
+JOY_BTN_3 quit
+JOY_BTN_START cycle pause
+JOY_BTN_SELECT quit
+JOY_BTN_BACK quit
+JOY_UP seek 60
+JOY_DOWN seek -60
+JOY_LEFT seek -10
+JOY_RIGHT seek 10
+]])
+      cf:close()
+    end
+
     local escaped = {}
     for _, p in ipairs(paths) do
       escaped[#escaped + 1] = string.format("%q", p)
     end
     local files_str = table.concat(escaped, " ")
-    local cmd = string.format('(mpv --fs --vo=drm %s || mpv --fs %s || ffplay -fs -autoexit %s) >/dev/null 2>&1', files_str, files_str, escaped[1])
+    local conf_arg = U.sh_quote(input_conf)
+    local cmd = string.format('(mpv --fs --vo=drm,gpu,sdl,xv,fbdev,x11 --input-conf=%s --keep-open=no --really-quiet %s || mpv --fs --input-conf=%s --keep-open=no %s || ffplay -fs -autoexit -exitonkeydown %s) >/dev/null 2>&1',
+      conf_arg, files_str, conf_arg, files_str, escaped[1])
     os.execute(cmd)
   end
 end

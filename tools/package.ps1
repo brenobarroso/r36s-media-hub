@@ -37,6 +37,15 @@ try {
     Remove-Item $tmp2
   }
 
+  $mpvConf = Join-Path $root "portmaster\mpv_input.conf"
+  if (Test-Path $mpvConf) {
+    $tmp3 = [System.IO.Path]::GetTempFileName()
+    $text3 = [System.IO.File]::ReadAllText($mpvConf) -replace "`r`n", "`n"
+    [System.IO.File]::WriteAllText($tmp3, $text3, (New-Object System.Text.UTF8Encoding($false)))
+    Add-File $tmp3 "r36smusic/mpv_input.conf"
+    Remove-Item $tmp3
+  }
+
   $gameDir = (Resolve-Path (Join-Path $root "game")).Path
   Get-ChildItem $gameDir -Recurse -File | ForEach-Object {
     $rel = $_.FullName.Substring($gameDir.Length + 1) -replace "\\", "/"

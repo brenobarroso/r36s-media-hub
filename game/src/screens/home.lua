@@ -48,7 +48,7 @@ local CARDS = {
   {
     id = "book",
     title = "Livros",
-    sub = "EPUB, MOBI, TXT e mangás",
+    sub = "PDF, EPUB e textos TXT",
     icon = "book",
     action = function()
       if app.screens.books then
@@ -60,10 +60,22 @@ local CARDS = {
   },
 }
 
--- Battery reading helper (Linux / ArkOS sysfs)
+-- Battery reading helper (Linux / ArkOS sysfs) with 5-second cache
+local cached_cap, cached_charging = nil, false
+local last_battery_check = -10
+
 local function get_battery_info()
+  local now = love.timer and love.timer.getTime() or (app.time or 0)
+  if (now - last_battery_check < 5.0) and (cached_cap ~= nil or last_battery_check > 0) then
+    return cached_cap, cached_charging
+  end
+  last_battery_check = now
+
   local f = io.open("/sys/class/power_supply/battery/capacity", "r")
-  if not f then return nil, false end
+  if not f then
+    cached_cap, cached_charging = nil, false
+    return nil, false
+  end
   local cap = tonumber(f:read("*l"))
   f:close()
   local charging = false
@@ -73,6 +85,7 @@ local function get_battery_info()
     fs:close()
     if st and st:lower():match("charging") then charging = true end
   end
+  cached_cap, cached_charging = cap, charging
   return cap, charging
 end
 

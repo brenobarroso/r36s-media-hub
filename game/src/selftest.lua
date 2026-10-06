@@ -74,7 +74,7 @@ steps[8] = { 4.2, function()
   local tmp_book = (os.getenv("TEMP") or ".") .. "/test_book.txt"
   local f = io.open(tmp_book, "w")
   if f then
-    f:write("Capítulo 1: O Começo da Jornada\n\nEste é um teste do leitor de livros para o console R36S.\nO R36S Media Hub agora suporta leitura de livros digitais em formato TXT, EPUB, MOBI e mangás CBZ!\n\nAs páginas são paginadas automaticamente com controle de tamanho de fonte, marcadores de página e modo escuro para leitura confortável.")
+    f:write("Capítulo 1: O Começo da Jornada\n\nEste é um teste do leitor de livros para o console R36S.\nO R36S Media Hub agora suporta leitura de livros digitais em formato PDF, EPUB e TXT!\n\nAs páginas são paginadas automaticamente com controle de tamanho de fonte, marcadores de página e modo escuro para leitura confortável.")
     f:close()
   end
   app.show("book_reader", tmp_book, 1)
@@ -87,6 +87,9 @@ steps[8] = { 4.2, function()
     uf:close()
     app.show("book_reader", user_pdf, 1)
     log("tested user pdf reader: pages=" .. #app.screens.book_reader.pages)
+    if #app.screens.book_reader.pages > 0 then
+      log("PDF SAMPLE TEXT:\n" .. tostring(app.screens.book_reader.pages[1]):sub(1, 400))
+    end
   end
 end }
 
