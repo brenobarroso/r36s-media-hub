@@ -110,10 +110,11 @@ function V.enter(dir_path)
   V.sel = 1
   V.scroll = 0
 
-  local list = fs.list(V.dir)
+  local list = fs.list(V.dir, VIDEO_EXT)
   for _, e in ipairs(list) do
-    local ext = U.ext(e.file)
-    if e.is_dir or VIDEO_EXT[ext] then
+    local ext = U.ext(e.file):lower()
+    local is_readme = not e.is_dir and (e.file:match("^COLOQUE_") or e.file:match("^README"))
+    if not is_readme and (e.is_dir or VIDEO_EXT[ext]) then
       local size = not e.is_dir and get_file_size(e.path) or nil
       V.entries[#V.entries + 1] = {
         name = e.name,

@@ -4,8 +4,11 @@ local U = require("src.util")
 
 local M = {}
 
--- Extensions we list/play. LÖVE can decode all of these.
-M.extensions = { mp3 = true, ogg = true, flac = true, wav = true }
+-- Extensions we list/play for music. LÖVE can decode all of these.
+M.extensions = {
+  mp3 = true, ogg = true, flac = true, wav = true,
+  m4a = true, aac = true, opus = true, wma = true,
+}
 
 local function popen_lines(cmd)
   local f = io.popen(cmd, "r")
@@ -76,22 +79,36 @@ local function raw_list(dir)
 end
 
 -- Returns an array of entries: { name, file, path, is_dir } (dirs first, natural order).
-function M.list(dir)
+-- filter_exts (optional): table of allowed extensions e.g. { png=true, jpg=true }.
+-- If filter_exts is nil, all non-hidden files are allowed.
+function M.list(dir, filter_exts)
   local dirs, files = raw_list(dir)
   local out = {}
 
   local function add(list, is_dir)
     local tmp = {}
     for _, n in ipairs(list) do
-      if n:sub(1, 1) ~= "." and (is_dir or M.extensions[U.ext(n)]) then
-        local display = U.sanitize(is_dir and n or U.strip_ext(n))
-        tmp[#tmp + 1] = {
-          name = display,
-          file = n,
-          path = U.join(dir, n),
-          is_dir = is_dir,
-          key = U.natkey(display),
-        }
+      if n:sub(1, 1) ~= "." then
+        local ext = U.ext(n):lower()
+        local allow = is_dir
+        if not allow then
+          if filter_exts ~= nil then
+            allow = (filter_exts[ext] == true)
+          else
+            allow = true
+          end
+        end
+
+        if allow then
+          local display = U.sanitize(is_dir and n or U.strip_ext(n))
+          tmp[#tmp + 1] = {
+            name = display,
+            file = n,
+            path = U.join(dir, n),
+            is_dir = is_dir,
+            key = U.natkey(display),
+          }
+        end
       end
     end
     table.sort(tmp, function(a, b) return a.key < b.key end)
@@ -107,7 +124,7 @@ end
 function M.collect(dir, out, depth)
   out = out or {}
   depth = depth or 0
-  for _, e in ipairs(M.list(dir)) do
+  for _, e in ipairs(M.list(dir, M.extensions)) do
     if #out >= 5000 then break end
     if e.is_dir then
       if depth < 5 then M.collect(e.path, out, depth + 1) end
@@ -152,11 +169,15 @@ function M.find_media_root(kind)
     return nil
   end
 
-  -- Check user configured folder in state
+  -- Check user configured folder in state (both plural and singular keys)
   local ok, app = pcall(require, "src.app")
-  if ok and app and app.state and app.state[kind .. "_dir"] then
+  if ok and app and app.state then
     local configured = app.state[kind .. "_dir"]
-    if configured ~= "" and M.dir_exists(configured) then
+    if not configured or configured == "" then
+      local singular = kind:gsub("s$", "") .. "_dir"
+      configured = app.state[singular]
+    end
+    if configured and configured ~= "" and M.dir_exists(configured) then
       return configured
     end
   end

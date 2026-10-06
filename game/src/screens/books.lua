@@ -48,10 +48,11 @@ function B.enter(dir_path)
 
   bookmarks.load()
 
-  local list = fs.list(B.dir)
+  local list = fs.list(B.dir, BOOK_EXT)
   for _, e in ipairs(list) do
     local ext = U.ext(e.file):lower()
-    if e.is_dir or BOOK_EXT[ext] then
+    local is_readme = not e.is_dir and (e.file:match("^COLOQUE_") or e.file:match("^README"))
+    if not is_readme and (e.is_dir or BOOK_EXT[ext]) then
       local size = not e.is_dir and get_file_size(e.path) or nil
       local bm = not e.is_dir and bookmarks.get(e.path) or nil
       B.entries[#B.entries + 1] = {

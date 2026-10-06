@@ -27,7 +27,7 @@ end
 function B.enter(path, select_name)
   if not path then return end -- coming back from another screen: keep state
   dir = path
-  entries = fs.list(dir)
+  entries = fs.list(dir, fs.extensions)
   sel, scroll = 1, 0
   if select_name then
     for i, e in ipairs(entries) do

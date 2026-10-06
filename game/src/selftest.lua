@@ -43,26 +43,33 @@ end }
 steps[4] = { 2.2, function()
   theme.set("dark")
   app.show("photos")
-  log("showing photos screen")
+  log("showing photos screen, entries=" .. #app.screens.photos.entries)
   love.graphics.captureScreenshot("test_04_photos.png")
 end }
 
 -- Step 5: Videos screen
 steps[5] = { 2.8, function()
   app.show("videos")
-  log("showing videos screen")
+  log("showing videos screen, entries=" .. #app.screens.videos.entries)
   love.graphics.captureScreenshot("test_05_videos.png")
 end }
 
 -- Step 6: Books screen
 steps[6] = { 3.4, function()
   app.show("books")
-  log("showing books screen")
+  log("showing books screen, entries=" .. #app.screens.books.entries)
   love.graphics.captureScreenshot("test_06_books.png")
 end }
 
+-- Step 6b: Folder Picker screen
+steps[7] = { 3.8, function()
+  app.show("folder_picker", "photos")
+  log("showing folder picker screen, dirs=" .. #app.screens.folder_picker.dirs)
+  love.graphics.captureScreenshot("test_06b_folder_picker.png")
+end }
+
 -- Step 7: Book Reader with inline test text
-steps[7] = { 4.0, function()
+steps[8] = { 4.2, function()
   -- Create a temporary test book
   local tmp_book = (os.getenv("TEMP") or ".") .. "/test_book.txt"
   local f = io.open(tmp_book, "w")
@@ -73,10 +80,18 @@ steps[7] = { 4.0, function()
   app.show("book_reader", tmp_book, 1)
   log("showing book reader screen")
   love.graphics.captureScreenshot("test_07_book_reader.png")
+
+  local user_pdf = "E:/books/Breno_Barroso_Desenvolvedor_Backend_NET.pdf"
+  local uf = io.open(user_pdf, "rb")
+  if uf then
+    uf:close()
+    app.show("book_reader", user_pdf, 1)
+    log("tested user pdf reader: pages=" .. #app.screens.book_reader.pages)
+  end
 end }
 
 -- Step 8: Play music and show Now Playing
-steps[8] = { 4.6, function()
+steps[9] = { 4.8, function()
   local tracks = fs.collect(app.root)
   log("tracks found: " .. #tracks)
   if #tracks > 0 then
@@ -87,23 +102,23 @@ steps[8] = { 4.6, function()
 end }
 
 -- Step 9: Capture Now Playing with EQ badge
-steps[9] = { 5.4, function()
+steps[10] = { 5.6, function()
   love.graphics.captureScreenshot("test_08_nowplaying.png")
 end }
 
 -- Step 10: Home screen with mini player
-steps[10] = { 6.0, function()
+steps[11] = { 6.2, function()
   app.show("home")
   log("showing home with mini player active")
 end }
 
 -- Step 11: Capture Home with mini player
-steps[11] = { 6.6, function()
+steps[12] = { 6.8, function()
   love.graphics.captureScreenshot("test_09_home_miniplayer.png")
 end }
 
 -- Step 12: Done!
-steps[12] = { 7.4, function()
+steps[13] = { 7.4, function()
   log("ALL SCREEN TESTS COMPLETED SUCCESSFULLY!")
   love.event.quit(0)
 end }

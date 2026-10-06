@@ -21,6 +21,7 @@ local PAGE = COLS * ROWS
 
 local PHOTO_EXT = {
   jpg = true, jpeg = true, png = true, bmp = true, webp = true,
+  gif = true, tga = true,
 }
 
 local function find_photo_root()
@@ -28,12 +29,18 @@ local function find_photo_root()
 end
 
 local function load_thumbnail(path)
-  if P.thumb_cache[path] then return P.thumb_cache[path] end
+  if P.thumb_cache[path] ~= nil then return P.thumb_cache[path] end
   local f = io.open(path, "rb")
-  if not f then return nil end
+  if not f then
+    P.thumb_cache[path] = false
+    return nil
+  end
   local data = f:read("*a")
   f:close()
-  if not data or #data == 0 then return nil end
+  if not data or #data == 0 then
+    P.thumb_cache[path] = false
+    return nil
+  end
 
   local ok, img = pcall(function()
     local fd = love.filesystem.newFileData(data, U.basename(path))
@@ -69,6 +76,7 @@ local function load_thumbnail(path)
     P.thumb_cache[path] = img
     return img
   end
+  P.thumb_cache[path] = false
   return nil
 end
 
@@ -79,9 +87,11 @@ function P.enter(dir_path)
   P.sel = 1
   P.scroll = 0
 
-  local list = fs.list(P.dir)
+  local list = fs.list(P.dir, PHOTO_EXT)
   for _, e in ipairs(list) do
-    if e.is_dir or PHOTO_EXT[U.ext(e.file)] then
+    local ext = U.ext(e.file):lower()
+    local is_readme = not e.is_dir and (e.file:match("^COLOQUE_") or e.file:match("^README"))
+    if not is_readme and (e.is_dir or PHOTO_EXT[ext]) then
       P.entries[#P.entries + 1] = e
       if not e.is_dir then
         P.photos_only[#P.photos_only + 1] = e.path

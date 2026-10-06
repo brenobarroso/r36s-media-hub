@@ -289,7 +289,7 @@ function BP.load_pdf(path)
   f:close()
   if not data or #data == 0 then return nil, "Arquivo vazio" end
 
-  -- Check if ArkOS has pdftotext installed
+  -- 1) Check if ArkOS / Linux has pdftotext installed
   if not U.is_windows() then
     local tmp = "/tmp/pdf_read.txt"
     local q = string.format("%q", path)
@@ -301,18 +301,47 @@ function BP.load_pdf(path)
     end
   end
 
-  -- Fallback: extract text blocks inside PDF
+  -- 2) Pure Lua stream extractor with zlib/deflate decompression
   local parts = {}
-  for stream in data:gmatch("BT(.-)ET") do
-    for txt in stream:gmatch("%((.-)%)%s*T[jJ]") do
-      parts[#parts + 1] = txt
+
+  local function extract_text_from_chunk(s)
+    if not s or #s == 0 then return end
+    for block in s:gmatch("BT(.-)ET") do
+      for txt in block:gmatch("%((.-)%)%s*T[jJ]") do
+        txt = txt:gsub("\\%(", "("):gsub("\\%)", ")"):gsub("\\\\", "\\")
+        if #txt > 0 then parts[#parts + 1] = txt end
+      end
+      for array in block:gmatch("%[(.-)%]%s*TJ") do
+        for item in array:gmatch("%((.-)%)") do
+          item = item:gsub("\\%(", "("):gsub("\\%)", ")"):gsub("\\\\", "\\")
+          if #item > 0 then parts[#parts + 1] = item end
+        end
+      end
+    end
+  end
+
+  -- Check raw uncompressed blocks
+  extract_text_from_chunk(data)
+
+  -- Check compressed streams (FlateDecode)
+  for stream in data:gmatch("stream[\r\n]+(.-)[\r\n]+endstream") do
+    if love.data and love.data.decompress then
+      local ok, decomp = pcall(love.data.decompress, "string", "zlib", stream)
+      if not ok or not decomp then
+        ok, decomp = pcall(love.data.decompress, "string", "deflate", stream)
+      end
+      if ok and decomp then
+        extract_text_from_chunk(decomp)
+      end
     end
   end
 
   if #parts > 0 then
+    local text = table.concat(parts, " ")
+    text = text:gsub("%s+", " "):gsub(" ([.,;:!?])", "%1")
     return {
       type = "text",
-      content = table.concat(parts, " "),
+      content = text,
     }
   end
 

@@ -62,9 +62,12 @@ local function save_state()
   st.screen_dimmer = app.state.screen_dimmer or "0"
   st.eq = app.state.eq or (player.eq and player.eq.presets[player.eq.current].id) or "flat"
   st.music_dir = app.state.music_dir
-  st.photo_dir = app.state.photo_dir
-  st.video_dir = app.state.video_dir
-  st.book_dir = app.state.book_dir
+  st.photos_dir = app.state.photos_dir or app.state.photo_dir
+  st.photo_dir = st.photos_dir
+  st.videos_dir = app.state.videos_dir or app.state.video_dir
+  st.video_dir = st.videos_dir
+  st.books_dir = app.state.books_dir or app.state.book_dir
+  st.book_dir = st.books_dir
   state.save(st)
 end
 

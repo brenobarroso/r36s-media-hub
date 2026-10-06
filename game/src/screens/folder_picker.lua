@@ -66,6 +66,8 @@ end
 local function select_current_folder()
   local key = FP.kind .. "_dir"
   app.state[key] = FP.dir
+  local singular = FP.kind:gsub("s$", "") .. "_dir"
+  app.state[singular] = FP.dir
   state.save(app.state)
 
   -- If music dir changed, update app.root
