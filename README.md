@@ -107,19 +107,19 @@ Ao inicializar, o aplicativo procura mídias automaticamente nas seguintes pasta
 
 ---
 
-## 🚀 Instalação Rápida
+## 🚀 Instalação Rápida e Automática
 
-1. Gere o pacote de distribuição executando no PowerShell:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File tools\package.ps1
-   ```
-2. Ou envie diretamente para o cartão SD conectado no PC (substitua `E:` pela letra do seu cartão):
+O script de instalação rápida detecta se o seu cartão SD possui o **PortMaster** e o **LÖVE 11.5** instalados. Caso não possua, ele **baixa e configura tudo automaticamente** direto no cartão SD!
+
+1. Conecte o cartão SD do console no computador (exemplo: unidade `E:`).
+2. Execute o comando de instalação no PowerShell:
    ```powershell
    powershell -ExecutionPolicy Bypass -File tools\deploy_to_sd.ps1 -Drive E:
    ```
-3. No console, acesse: **Ports** &rarr; **R36S Media Hub**.
+   *O script valida o PortMaster, baixa o runtime LÖVE 11.5 se necessário, cria as pastas de mídia (`music`, `photos`, `videos`, `books`) e instala o Media Hub.*
+3. Insira o cartão no console e acerte: **Ports** &rarr; **R36S Media Hub**.
 
-> 📖 **Para instruções detalhadas de instalação, dependências do PortMaster e compatibilidade com outros consoles, consulte o [Manual Completo de Uso (MANUAL.md)](MANUAL.md).**
+> 💡 **Para quem não usa Windows:** você também pode baixar o `.zip` pronto na aba [Releases](https://github.com/brenobarroso/r36s-media-hub/releases) e extrair na pasta `ports/` do cartão SD. Consulte o [Manual Completo de Uso (MANUAL.md)](MANUAL.md).
 
 ---
 

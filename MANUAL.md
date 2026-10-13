@@ -112,13 +112,17 @@ O aplicativo conversa diretamente com os nós do kernel Linux:
 
 ## 4. Instalação
 
-### 4.1 Método 1: Script Automatizado (Windows/PC)
+### 4.1 Método 1: Script Automatizado (Windows/PC) — Recomendado
 Com o cartão SD conectado no PC (exemplo: unidade `E:`):
 ```powershell
 # No PowerShell, dentro da pasta do projeto:
 powershell -ExecutionPolicy Bypass -File tools\deploy_to_sd.ps1 -Drive E:
 ```
-O script compila o pacote, extrai os arquivos nos caminhos corretos, garante quebras de linha Unix (LF) e cria as pastas `photos`, `videos` e `books` na raiz do SD.
+**O que o script faz automaticamente por você:**
+* **Validação de Dependências:** Verifica se o **PortMaster** e o **LÖVE 11.5** estão presentes no cartão SD.
+* **Auto-Instalação:** Se faltar o PortMaster ou o runtime LÖVE 11.5, o script baixa o pacote oficial mais recente do PortMaster (~23 MB) e o instala nas pastas corretas (`tools/PortMaster` e `ports/PortMaster`).
+* **Compilação e Instalação:** Compila o pacote atualizado do Media Hub, extrai em `ports/`, garante quebras de linha Unix (LF) no launcher bash e cria as pastas `music`, `photos`, `videos` e `books` na raiz do SD com arquivos de instruções.
+* **Tudo em um único comando, sem necessidade de configuração manual prévia!**
 
 ### 4.2 Método 2: Instalação Manual via ZIP
 1. Gere o pacote de distribuição:
